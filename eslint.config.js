@@ -6,7 +6,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const bunFiles = ["index.ts", "server/**/*.ts", "client/src/index.ts", "client/build.ts"];
+const bunFiles = ["index.ts", "server/**/*.ts"];
 
 export default defineConfig([
   globalIgnores([
@@ -16,7 +16,6 @@ export default defineConfig([
     "**/.cache/**",
     "**/coverage/**",
     "*.lock",
-    "client/bun-env.d.ts",
   ]),
   eslint.configs.recommended,
   tseslint.configs.eslintRecommended,

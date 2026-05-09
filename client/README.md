@@ -1,14 +1,20 @@
 # Client
 
-Bun dev server with React and Tailwind CSS v4.
+Vite + React + Tailwind CSS v4.
 
 ```sh
-bun install
-bun run dev
+npm install
+npm run dev
 ```
 
 Production build output goes to `dist/`:
 
 ```sh
-bun run build
+npm run build
+```
+
+Preview the production build:
+
+```sh
+npm run preview
 ```
