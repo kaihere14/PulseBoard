@@ -1,21 +1,14 @@
-# bun-react-tailwind-shadcn-template
+# Client
 
-To install dependencies:
+Bun dev server with React and Tailwind CSS v4.
 
-```bash
+```sh
 bun install
+bun run dev
 ```
 
-To start a development server:
+Production build output goes to `dist/`:
 
-```bash
-bun dev
+```sh
+bun run build
 ```
-
-To run for production:
-
-```bash
-bun start
-```
-
-This project was created using `bun init` in bun v1.3.13. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
