@@ -1,0 +1,14 @@
+node_modules
+client
+server
+dist
+build
+coverage
+.turbo
+.next
+.cache
+*.min.js
+*.min.css
+bun.lock
+client/bun.lock
+server/bun.lock
