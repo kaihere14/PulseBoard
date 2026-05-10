@@ -1,16 +1,11 @@
 import { Schema, model } from "mongoose";
 
 const authSchema = new Schema({
-    anonymousId: {
-        type: String,
-        required: false,
-        unique: true,
-        sparse: true,
-        index: true,
-    },
     userId: {
         type: String,
         required: true,
+        unique: true,
+        index: true,
     },
     email: {
         type: String,
@@ -19,7 +14,7 @@ const authSchema = new Schema({
     name: {
         type: String,
         required: false,
-        default: "Anonymous",
+        default: "",
     },
     image: {
         type: String,

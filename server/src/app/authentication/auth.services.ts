@@ -21,18 +21,3 @@ export async function getOrCreateUser(userId: string) {
   const user = await createUserFromClerk(userDetail);
   return { user, created: true as const };
 }
-
-export async function findAnonymousById(anonymousId: string) {
-  return Auth.findOne({ anonymousId: anonymousId.trim() });
-}
-
-/** Create a guest row with a server-generated `anonymousId` and the client-provided `name`. */
-export async function createAnonymousUser(name: string) {
-  const anonymousId = crypto.randomUUID();
-  return Auth.create({
-    anonymousId,
-    userId: `anon_${crypto.randomUUID()}`,
-    name: name.trim(),
-    email: "",
-  });
-}

@@ -2,9 +2,9 @@ import http from "http";
 import { getApplication } from "./app/app";
 
 const app = await getApplication();
-
+const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-server.listen(3000, () => {
-    console.log("Server is running on port 3000");
+server.listen(PORT, () => {
+    console.log(`[Server] Server is running on http://localhost:${PORT}`);
 });
