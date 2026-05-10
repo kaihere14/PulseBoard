@@ -1,16 +1,18 @@
 {
   "name": "server",
-  "module": "index.ts",
+  "description": "Run `bun run build` — bare `bun build` is the bundler CLI and needs entry files.",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run index.ts"
+    "typecheck": "tsc --noEmit",
+    "dev": "bun --watch src/index.ts",
+    "build": "bun run typecheck && bun build src/index.ts --outdir dist --target=bun",
+    "start": "NODE_ENV=production bun dist/index.js"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@types/bun": "latest",
+    "typescript": "^5.9.0"
   },
   "dependencies": {
     "@clerk/express": "^2.1.15",
@@ -18,6 +20,7 @@
     "@types/express": "^5.0.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mongoose": "^9.6.2"
   }
 }

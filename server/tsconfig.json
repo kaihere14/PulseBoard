@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
+     "rootDir": "./src",
+    "outDir": "./dist",
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "Preserve",
@@ -26,5 +28,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

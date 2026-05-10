@@ -1,12 +1,24 @@
 /**
- * Vite entry. ClerkProvider wraps the app.
+ * Vite entry. ClerkProvider wraps the app; TanStack Router handles file-based routes.
  * @see https://clerk.com/docs/react/reference/components/overview
  */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/react";
-import { App } from "./App";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { routeTree } from "./routeTree.gen";
 import "./index.css";
+
+const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+});
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 const elem = document.getElementById("root");
 if (!elem) {
@@ -23,13 +35,11 @@ if (!publishableKey) {
     </p>,
   );
 } else {
-  const app = (
+  createRoot(elem).render(
     <StrictMode>
       <ClerkProvider publishableKey={publishableKey}>
-        <App />
+        <RouterProvider router={router} />
       </ClerkProvider>
-    </StrictMode>
+    </StrictMode>,
   );
-
-  createRoot(elem).render(app);
 }

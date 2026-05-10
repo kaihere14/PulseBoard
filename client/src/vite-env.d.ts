@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+  /** PulseBoard API origin, e.g. http://localhost:3000 */
+  readonly VITE_API_URL?: string;
 }
 
 interface ImportMeta {
