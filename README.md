@@ -1,4 +1,3 @@
-
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -85,7 +84,6 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
    bash
    git clone https://github.com/kaihere14/PulseBoard.git
    cd PulseBoard
-   
 
 2. **Install dependencies**
    Install all dependencies for the root, client, and server:
@@ -94,26 +92,23 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
    bun install
    cd client && bun install
    cd ../server && bun install
-   
 
 3. **Configure Environment Variables**
 
    Create a `.env` file in the `client/` directory:
 
    env
-   VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+   VITE*CLERK_PUBLISHABLE_KEY=pk_test*...
    VITE_API_URL=http://localhost:3000
-   
 
    Create a `.env` file in the `server/` directory:
 
    env
    PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/pulseboard
-   CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
+   MONGODB*URI=mongodb://localhost:27017/pulseboard
+   CLERK_PUBLISHABLE_KEY=pk_test*...
+   CLERK*SECRET_KEY=sk_test*...
    CLIENT_URL=http://localhost:5173
-   
 
 ### Running the Application
 
@@ -125,17 +120,16 @@ bash
 cd server
 bun run dev
 
-
 **Start the Frontend:**
 
 bash
 cd client
 bun run dev
 
-
 The application will be available at `http://localhost:5173`.
 
 ---
+
 ## 📖 Usage
 
 ### Creating a Quiz
@@ -214,19 +208,18 @@ cd server
 bun run build
 bun run start
 
-
 ### Frontend (Vite)
 
 bash
 cd client
 bun run build
 
-
 The static files will be generated in `client/dist`.
 
 #### Vercel Support 🌐
 
 The frontend includes a `vercel.json` configuration to handle client-side rewrites. This directs all requests to `index.html`, supporting single-page application (SPA) routing for seamless Vercel deployments.
+
 ## 🤝 Contributing
 
 1. Fork the Project
