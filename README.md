@@ -1,3 +1,4 @@
+
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -14,6 +15,8 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 ## 🚀 Features
 
 - **Instant Quiz Creation**: Build quizzes with multiple questions and share them instantly via unique join codes.
+- **Detailed Analytics**: Visualize response data with real-time statistics, including percentage breakdowns and total counts for every question. 📊
+- **Quiz Management**: Full control over the quiz lifecycle—toggle between draft, active, and expired states, or delete quizzes as needed. ⚙️
 - **Flexible Authentication**: Powered by Clerk, supporting both fully authenticated sessions and anonymous participation.
 - **Real-time Sync**: Automatic account synchronization between Clerk and the internal database upon login.
 - **Modern Routing**: Type-safe routing using TanStack Router for a seamless SPA experience.
@@ -21,7 +24,6 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 - **Developer First**: Strict linting, formatting, and pre-commit hooks to ensure high code quality.
 
 ---
-
 ## 🛠 Tech Stack
 
 ### Frontend
@@ -148,8 +150,13 @@ The application will be available at `http://localhost:5173`.
 2. Enter the unique quiz code provided by the creator.
 3. Click **"Join"** to enter the live session.
 
----
+### Analyzing Results 📈
 
+1. Access your dashboard to see a list of your quizzes.
+2. Click on any quiz to view its **Analytics** page.
+3. Review detailed response statistics and manage the quiz status (e.g., publishing or closing the quiz).
+
+---
 ## 🔌 API Documentation
 
 ### Authentication
@@ -158,11 +165,15 @@ The application will be available at `http://localhost:5173`.
 
 ### Quizzes
 
+- `GET /api/quiz`: Retrieves a list of quizzes created by the authenticated user.
 - `POST /api/quiz`: Creates a new quiz session.
-- `GET /api/quiz/:code`: Retrieves quiz details for participants.
+- `GET /api/quiz/:slug`: Retrieves quiz details for participants.
+- `POST /api/quiz/submit`: Submits answers for a specific quiz.
+- `PATCH /api/quiz/:slug`: Updates quiz metadata or status.
+- `DELETE /api/quiz/:slug`: Deletes a specific quiz.
+- `GET /api/quiz/:slug/analytics`: Fetches aggregated response data and statistics for a quiz.
 
 ---
-
 ## 🛠 Development
 
 ### Linting & Formatting
