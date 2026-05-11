@@ -1,4 +1,3 @@
-
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -24,6 +23,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 - **Developer First**: Strict linting, formatting, and pre-commit hooks to ensure high code quality.
 
 ---
+
 ## 🛠 Tech Stack
 
 ### Frontend
@@ -157,6 +157,7 @@ The application will be available at `http://localhost:5173`.
 3. Review detailed response statistics and manage the quiz status (e.g., publishing or closing the quiz).
 
 ---
+
 ## 🔌 API Documentation
 
 ### Authentication
@@ -174,6 +175,7 @@ The application will be available at `http://localhost:5173`.
 - `GET /api/quiz/:slug/analytics`: Fetches aggregated response data and statistics for a quiz.
 
 ---
+
 ## 🛠 Development
 
 ### Linting & Formatting
