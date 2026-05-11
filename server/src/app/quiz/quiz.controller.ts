@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
-import { createQuizSchema, getQuizBySlugSchema } from "./quiz.dto";
-import type { CreateQuizResult } from "./quiz.service";
+import { createQuizSchema, getQuizBySlugSchema, submitQuizResponseSchema } from "./quiz.dto";
+import type { CreateQuizResult, SubmitQuizResult } from "./quiz.service";
 import * as quizService from "./quiz.service";
 
 
@@ -48,6 +48,77 @@ export const getUserQuizzes = async (req: Request, res: Response) => {
       `[Quiz] Error fetching quizzes for user: ${error instanceof Error ? error.message : String(error)}`
     );
     return res.status(500).json({ error: "Failed to fetch quizzes" });
+  }
+};
+
+export const submitAnswer = async (req: Request, res: Response) => {
+  const parsedBody = submitQuizResponseSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({
+      error: "Invalid submission payload",
+      details: parsedBody.error.flatten(),
+    });
+  }
+
+  const dto = parsedBody.data;
+
+  try {
+    const poll = await quizService.getPollById(dto.pollId);
+    if (!poll) {
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+
+    // Non-anonymous polls: enforce auth and use the Clerk userId as the voter identity
+    let resolvedVoterId: string;
+    if (!poll.isAnonymousPoll) {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        return res.status(401).json({
+          error: "Login required to submit this quiz",
+          code: "LOGIN_REQUIRED",
+        });
+      }
+      resolvedVoterId = userId;
+    } else {
+      resolvedVoterId = dto.voterId;
+    }
+
+    const result: SubmitQuizResult = await quizService.submitQuizResponse(dto, resolvedVoterId);
+    return res.status(201).json(result);
+  } catch (error: unknown) {
+    // Duplicate submission — MongoDB unique index violation (code 11000)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: number }).code === 11000
+    ) {
+      return res
+        .status(409)
+        .json({ error: "You have already submitted a response to this quiz" });
+    }
+
+    if (error instanceof Error) {
+      const serviceCode = (error as Error & { serviceCode?: string }).serviceCode;
+      if (serviceCode === "NOT_FOUND") {
+        return res.status(404).json({ error: error.message });
+      }
+      if (serviceCode === "NOT_ACCEPTING" || serviceCode === "EXPIRED") {
+        return res.status(409).json({ error: error.message });
+      }
+      if (
+        serviceCode === "MISSING_REQUIRED" ||
+        serviceCode === "INVALID_QUESTION" ||
+        serviceCode === "INVALID_OPTION"
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+
+    console.error(
+      `[Quiz] Error submitting answer: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return res.status(500).json({ error: "Failed to submit quiz response" });
   }
 };
 

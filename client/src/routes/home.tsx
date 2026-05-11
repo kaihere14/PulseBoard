@@ -104,12 +104,12 @@ function Home() {
   };
 
   const joinWithCode = () => {
-    const code = joinCode.trim().toUpperCase();
+    const code = joinCode.trim();
     if (!code) {
       setActionMessage("Enter a quiz code before joining.");
       return;
     }
-    setActionMessage(`Joining with code ${code} will be connected next.`);
+    void navigate({ to: "/quiz", search: { id: code } });
   };
 
   return (
@@ -249,6 +249,7 @@ function Home() {
                 type="text"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.currentTarget.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") joinWithCode(); }}
                 placeholder="e.g. PULSE-42"
                 className="mt-2 w-full rounded-lg border-2 border-zinc-900 bg-white px-4 py-3 text-base font-semibold uppercase tracking-widest placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
               />

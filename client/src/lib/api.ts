@@ -63,6 +63,22 @@ export class LoginRequiredError extends Error {
   }
 }
 
+export class AlreadyVotedError extends Error {
+  readonly code = "ALREADY_VOTED" as const;
+  constructor() {
+    super("You have already submitted a response to this quiz");
+    this.name = "AlreadyVotedError";
+  }
+}
+
+export class QuizNotActiveError extends Error {
+  readonly code = "NOT_ACTIVE" as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "QuizNotActiveError";
+  }
+}
+
 export interface QuizDetail {
   poll: {
     _id: string;
@@ -139,6 +155,57 @@ export async function getUserQuizzes(token: string | null): Promise<QuizSummary[
   }
 
   return (data as { quizzes: QuizSummary[] }).quizzes;
+}
+
+export interface SubmitAnswerPayload {
+  pollId: string;
+  voterId: string;
+  answers: Array<{ questionId: string; selectedOptionIndex: number }>;
+}
+
+export interface SubmitAnswerResult {
+  response: { _id: string; pollId: string; voterId: string };
+  answers: Array<{
+    _id: string;
+    responseId: string;
+    questionId: string;
+    selectedOptionIndex: number;
+  }>;
+}
+
+export async function submitQuizResponse(
+  token: string | null,
+  payload: SubmitAnswerPayload
+): Promise<SubmitAnswerResult> {
+  const response = await fetch(`${apiOrigin()}/api/quiz/submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await response.text();
+  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  const errorMessage =
+    data && typeof data === "object" && "error" in data
+      ? String((data as { error: unknown }).error)
+      : null;
+
+  if (response.status === 409) {
+    if (errorMessage?.toLowerCase().includes("already submitted")) {
+      throw new AlreadyVotedError();
+    }
+    throw new QuizNotActiveError(errorMessage ?? "Quiz is not accepting responses");
+  }
+
+  if (!response.ok) {
+    throw new Error(errorMessage ?? `Failed to submit (${response.status})`);
+  }
+
+  return data as SubmitAnswerResult;
 }
 
 export async function createQuiz(
