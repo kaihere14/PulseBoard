@@ -107,7 +107,7 @@ function SuccessModal({ slug, onClose }: { slug: string; onClose: () => void }) 
             onClick={onClose}
             className="w-full rounded-lg border-2 border-zinc-900 bg-zinc-900 py-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-[4px_4px_0_0_#a1a1aa] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#a1a1aa] active:translate-y-1 active:shadow-none"
           >
-            Close
+            Close & view analytics
           </button>
         </div>
       </div>
@@ -239,8 +239,7 @@ function CreateQuiz() {
         <SuccessModal
           slug={createdSlug}
           onClose={() => {
-            setSubmitState("idle");
-            setCreatedSlug(null);
+            void navigate({ to: "/analytics", search: { id: createdSlug } });
           }}
         />
       ) : null}
