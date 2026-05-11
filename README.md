@@ -1,3 +1,4 @@
+
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -155,11 +156,13 @@ The application will be available at `http://localhost:5173`.
 
 ## 🔌 API Documentation
 
-### Authentication
+The backend API is built with Express 5 and runs on Bun. Most endpoints require a valid Clerk session token for authorization.
+
+### 🔐 Authentication
 
 - `GET /api/auth`: Synchronizes the Clerk user with the local database. Requires a valid Clerk JWT in the `Authorization` header.
 
-### Quizzes
+### 📝 Quizzes
 
 - `GET /api/quiz`: Retrieves a list of quizzes created by the authenticated user.
 - `POST /api/quiz`: Creates a new quiz session.
@@ -168,9 +171,6 @@ The application will be available at `http://localhost:5173`.
 - `PATCH /api/quiz/:slug`: Updates quiz metadata or status.
 - `DELETE /api/quiz/:slug`: Deletes a specific quiz.
 - `GET /api/quiz/:slug/analytics`: Fetches aggregated response data and statistics for a quiz.
-
----
-
 ## 🛠 Development
 
 ### Linting & Formatting
