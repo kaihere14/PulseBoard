@@ -25,6 +25,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **Framework**: React 19
 - **Build Tool**: Vite
 - **Routing**: TanStack Router
@@ -33,6 +34,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 - **State Management**: React Hooks + TanStack Router state
 
 ### Backend
+
 - **Runtime**: Bun
 - **Framework**: Express 5
 - **Database**: MongoDB via Mongoose
@@ -40,6 +42,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 - **Environment**: Dotenv for configuration
 
 ### Tooling
+
 - **Package Manager**: Bun
 - **Linting**: ESLint 10+
 - **Formatting**: Prettier 3.8
@@ -67,6 +70,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 ## 🏁 Getting Started
 
 ### Prerequisites
+
 - [Bun](https://bun.sh) installed (v1.1.0 or higher recommended)
 - A [Clerk](https://clerk.com) account for authentication
 - A MongoDB instance (local or Atlas)
@@ -74,6 +78,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/kaihere14/PulseBoard.git
    cd PulseBoard
@@ -81,6 +86,7 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 
 2. **Install dependencies**
    Install all dependencies for the root, client, and server:
+
    ```bash
    bun install
    cd client && bun install
@@ -90,12 +96,14 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 3. **Configure Environment Variables**
 
    Create a `.env` file in the `client/` directory:
+
    ```env
    VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
    VITE_API_URL=http://localhost:3000
    ```
 
    Create a `.env` file in the `server/` directory:
+
    ```env
    PORT=3000
    MONGODB_URI=mongodb://localhost:27017/pulseboard
@@ -108,12 +116,14 @@ Built with a modern tech stack focusing on speed and developer experience, Pulse
 You will need two terminal windows to run the full stack:
 
 **Start the Backend:**
+
 ```bash
 cd server
 bun run dev
 ```
 
 **Start the Frontend:**
+
 ```bash
 cd client
 bun run dev
@@ -126,12 +136,14 @@ The application will be available at `http://localhost:5173`.
 ## 📖 Usage
 
 ### Creating a Quiz
+
 1. Sign in using the landing page.
 2. Navigate to the **Home** dashboard.
 3. Click **"Create quiz"** to start the creation flow.
 4. Once created, you will receive a unique code to share with participants.
 
 ### Joining a Quiz
+
 1. On the **Home** dashboard, locate the **"Join a quiz"** section.
 2. Enter the unique quiz code provided by the creator.
 3. Click **"Join"** to enter the live session.
@@ -141,9 +153,11 @@ The application will be available at `http://localhost:5173`.
 ## 🔌 API Documentation
 
 ### Authentication
+
 - `GET /api/auth`: Synchronizes the Clerk user with the local database. Requires a valid Clerk JWT in the `Authorization` header.
 
 ### Quizzes
+
 - `POST /api/quiz`: Creates a new quiz session.
 - `GET /api/quiz/:code`: Retrieves quiz details for participants.
 
@@ -152,6 +166,7 @@ The application will be available at `http://localhost:5173`.
 ## 🛠 Development
 
 ### Linting & Formatting
+
 The project uses strict ESLint and Prettier rules. These are enforced via Husky on every commit.
 
 ```bash
@@ -166,6 +181,7 @@ bun run format
 ```
 
 ### Type Checking
+
 ```bash
 # Server type check
 cd server && bun run typecheck
@@ -176,7 +192,9 @@ cd server && bun run typecheck
 ## 🚀 Deployment
 
 ### Backend (Bun)
+
 The server is optimized for Bun's native bundler:
+
 ```bash
 cd server
 bun run build
@@ -184,10 +202,12 @@ bun run start
 ```
 
 ### Frontend (Vite)
+
 ```bash
 cd client
 bun run build
 ```
+
 The static files will be generated in `client/dist`.
 
 ---
