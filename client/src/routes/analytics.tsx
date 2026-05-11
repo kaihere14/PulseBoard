@@ -1,6 +1,6 @@
 import { useAuth, useClerk } from "@clerk/react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteQuiz,
   getQuizAnalytics,
@@ -12,6 +12,7 @@ import {
   type QuizAnalytics,
   type QuizStatus,
 } from "../lib/api";
+import { createAnalyticsSocket } from "../lib/analyticsSocket";
 
 export const Route = createFileRoute("/analytics")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -55,32 +56,41 @@ function AnalyticsPage() {
   const [animate, setAnimate] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [copied, setCopied] = useState(false);
+  const silentNextFetchRef = useRef(false);
 
   useEffect(() => {
     if (!isLoaded) return;
     let cancelled = false;
+    const silent = silentNextFetchRef.current;
+    silentNextFetchRef.current = false;
 
     void (async () => {
       if (!slug) {
+        silentNextFetchRef.current = false;
         setFetchState("error");
         setErrorMessage("No quiz ID provided.");
         return;
       }
 
       try {
-        setFetchState("loading");
-        setAnimate(false);
+        if (!silent) {
+          setFetchState("loading");
+          setAnimate(false);
+        }
         const token = isSignedIn ? await getToken() : null;
         const data = await getQuizAnalytics(slug, token);
         if (cancelled) return;
         setAnalytics(data);
         setFetchState("done");
-        // Defer to next frames so the browser paints 0% first, then grows.
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => setAnimate(true))
-        );
+        if (!silent) {
+          // Defer to next frames so the browser paints 0% first, then grows.
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => setAnimate(true))
+          );
+        }
       } catch (err) {
         if (cancelled) return;
+        if (silent) return;
         if (err instanceof LoginRequiredError) {
           setFetchState("login_required");
         } else if (err instanceof ForbiddenError) {
@@ -99,6 +109,46 @@ function AnalyticsPage() {
       cancelled = true;
     };
   }, [isLoaded, isSignedIn, slug, getToken, refreshTick]);
+
+  useEffect(() => {
+    if (!slug) return;
+
+    const socket = createAnalyticsSocket();
+    socket.emit("join-analytics-room", slug);
+
+    const DEBOUNCE_MS = 800;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleSilentRefresh = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        silentNextFetchRef.current = true;
+        setRefreshTick((t) => t + 1);
+      }, DEBOUNCE_MS);
+    };
+
+    const onAnalyticsChanged = (payload: unknown) => {
+      if (
+        payload &&
+        typeof payload === "object" &&
+        "slug" in payload &&
+        typeof (payload as { slug: unknown }).slug === "string" &&
+        (payload as { slug: string }).slug === slug
+      ) {
+        scheduleSilentRefresh();
+      }
+    };
+
+    socket.on("analytics:changed", onAnalyticsChanged);
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      socket.off("analytics:changed", onAnalyticsChanged);
+      socket.emit("leave-analytics-room", slug);
+      socket.close();
+    };
+  }, [slug]);
 
   const shareUrl = useMemo(() => {
     if (!slug) return "";
@@ -128,21 +178,21 @@ function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-stone-100 text-zinc-900">
       <header className="border-b-2 border-zinc-900 bg-amber-200">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <button
             type="button"
             onClick={() => void navigate({ to: "/home" })}
-            className="flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:underline"
+            className="flex shrink-0 items-center gap-2 text-xs font-black uppercase tracking-widest hover:underline sm:text-sm"
           >
             ← Back
           </button>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-700">
+          <p className="max-w-[55%] truncate text-right text-[10px] font-black uppercase tracking-[0.3em] text-zinc-700 sm:max-w-none">
             PulseBoard · Analytics
           </p>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-6 py-10">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         {(!isLoaded || fetchState === "idle" || fetchState === "loading") && (
           <LoadingState />
         )}
@@ -350,9 +400,9 @@ function AnalyticsView({
   return (
     <div>
       {/* Hero / poll header */}
-      <div className="relative rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-[6px_6px_0_0_#18181b] md:p-8">
+      <div className="relative rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-6 md:p-8">
         <span
-          className="absolute -right-3 -top-3 rotate-3 rounded-md border-2 border-zinc-900 bg-emerald-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b]"
+          className="absolute right-2 top-2 rotate-3 rounded-md border-2 border-zinc-900 bg-emerald-300 px-2 py-1 text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] sm:-right-3 sm:-top-3 sm:text-[11px]"
           aria-hidden
         >
           Live results ✦
@@ -380,44 +430,46 @@ function AnalyticsView({
           </span>
         </div>
 
-        <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
+        <h1 className="mt-3 text-balance wrap-break-word text-2xl font-black tracking-tight sm:text-3xl md:text-4xl">
           {poll.title}
         </h1>
-        <p className="mt-2 font-mono text-[11px] font-semibold text-zinc-500">
+        <p className="mt-2 break-all font-mono text-[11px] font-semibold text-zinc-500">
           /{poll.slug}
         </p>
 
         {/* Share row */}
-        <div className="mt-5 flex flex-wrap items-stretch gap-2">
-          <div className="flex flex-1 items-center gap-2 overflow-hidden rounded-lg border-2 border-zinc-900 bg-stone-50 px-3 py-2 shadow-[3px_3px_0_0_#18181b]">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-stretch">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-lg border-2 border-zinc-900 bg-stone-50 px-3 py-2 shadow-[3px_3px_0_0_#18181b]">
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-zinc-500">
               Link
             </span>
             <span className="truncate font-mono text-xs font-semibold text-zinc-700">
               {shareUrl}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onCopy}
-            className={`inline-flex items-center gap-2 rounded-lg border-2 border-zinc-900 px-4 py-2 text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] ${
-              copied ? "bg-lime-300" : "bg-white"
-            }`}
-          >
-            {copied ? "Copied ✓" : "Copy link"}
-          </button>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex items-center gap-2 rounded-lg border-2 border-zinc-900 bg-amber-200 px-4 py-2 text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b]"
-          >
-            ↻ Refresh
-          </button>
+          <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
+            <button
+              type="button"
+              onClick={onCopy}
+              className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-zinc-900 px-4 py-2 text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] sm:flex-none ${
+                copied ? "bg-lime-300" : "bg-white"
+              }`}
+            >
+              {copied ? "Copied ✓" : "Copy link"}
+            </button>
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-zinc-900 bg-amber-200 px-4 py-2 text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] sm:flex-none"
+            >
+              ↻ Refresh
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Stat cards */}
-      <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="mt-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
         <StatCard
           label="Responses"
           value={totalResponses.toString()}
@@ -478,8 +530,8 @@ function AnalyticsView({
       {/* Per-question results */}
       {totalResponses > 0 && questions.length > 0 && (
         <section className="mt-8 space-y-5">
-          <div className="flex items-end justify-between">
-            <h2 className="text-2xl font-black tracking-tight">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="text-xl font-black tracking-tight sm:text-2xl">
               Question breakdown
             </h2>
             <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">
@@ -513,19 +565,19 @@ function StatCard({
   icon: string;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[4px_4px_0_0_#18181b] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#18181b]">
-      <div className="flex items-center justify-between">
+    <div className="min-w-0 rounded-2xl border-2 border-zinc-900 bg-white p-3 shadow-[4px_4px_0_0_#18181b] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#18181b] sm:p-4">
+      <div className="flex items-center justify-between gap-2">
         <span
-          className={`inline-flex h-8 w-8 items-center justify-center rounded-md border-2 border-zinc-900 text-base ${accent}`}
+          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-zinc-900 text-sm sm:h-8 sm:w-8 sm:text-base ${accent}`}
           aria-hidden
         >
           {icon}
         </span>
-        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+        <p className="min-w-0 text-right text-[9px] font-black uppercase tracking-widest text-zinc-500 sm:text-[10px]">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-2xl font-black tracking-tight">{value}</p>
+      <p className="mt-2 truncate text-xl font-black tracking-tight sm:mt-3 sm:text-2xl">{value}</p>
     </div>
   );
 }
@@ -548,16 +600,16 @@ function QuestionCard({
   );
 
   return (
-    <article className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0_0_#18181b] md:p-6">
+    <article className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[4px_4px_0_0_#18181b] sm:p-5 md:p-6">
       <div className="flex items-start gap-3">
         <span
           className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-2 border-zinc-900 text-xs font-black ${accent}`}
         >
           {index + 1}
         </span>
-        <div className="flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="text-lg font-bold leading-snug">{question.question}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+            <p className="text-base font-bold leading-snug sm:text-lg">{question.question}</p>
             <div className="flex shrink-0 items-center gap-2">
               {question.isRequired ? (
                 <span className="rounded-md border-2 border-zinc-900 bg-rose-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
@@ -620,12 +672,12 @@ function OptionBar({
         />
 
         {/* Foreground content */}
-        <div className="relative flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="relative flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-zinc-900 bg-white text-[10px] font-black">
               {String.fromCharCode(65 + option.optionIndex)}
             </span>
-            <span className="truncate text-sm font-bold text-zinc-900">
+            <span className="min-w-0 flex-1 wrap-break-word text-sm font-bold text-zinc-900 sm:flex-none sm:truncate">
               {option.optionText}
             </span>
             {isTop && (
@@ -637,7 +689,7 @@ function OptionBar({
               </span>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 font-mono text-xs font-black text-zinc-900">
+          <div className="flex shrink-0 items-center justify-end gap-2 self-end font-mono text-xs font-black text-zinc-900 sm:self-auto">
             <span>{option.count}</span>
             <span className="text-zinc-500">·</span>
             <span>{option.percentage.toFixed(1)}%</span>
@@ -766,15 +818,15 @@ function ManagePollPanel({
   };
 
   return (
-    <section className="mt-8 rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
+    <section className="mt-8 rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-5 md:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
             Creator tools
           </p>
           <h2 className="mt-1 text-2xl font-black tracking-tight">Manage poll</h2>
         </div>
-        <span className="rounded-full border-2 border-zinc-900 bg-amber-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+        <span className="w-fit rounded-full border-2 border-zinc-900 bg-amber-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest">
           Only you can see this
         </span>
       </div>
@@ -812,18 +864,18 @@ function ManagePollPanel({
             <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">
               Expires at
             </span>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 type="datetime-local"
                 value={draftExpiresAt}
                 onChange={(e) => setDraftExpiresAt(e.currentTarget.value)}
-                className="w-full rounded-lg border-2 border-zinc-900 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300"
+                className="min-h-[44px] min-w-0 flex-1 rounded-lg border-2 border-zinc-900 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300"
               />
               {draftExpiresAt && (
                 <button
                   type="button"
                   onClick={() => setDraftExpiresAt("")}
-                  className="rounded-lg border-2 border-zinc-900 bg-stone-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-stone-200"
+                  className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border-2 border-zinc-900 bg-stone-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-stone-200 sm:min-h-0"
                   title="Clear expiry"
                 >
                   Clear
@@ -861,12 +913,12 @@ function ManagePollPanel({
         </p>
       )}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={!dirty || saving}
-          className="inline-flex items-center gap-2 rounded-lg border-2 border-zinc-900 bg-emerald-500 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#18181b]"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-zinc-900 bg-emerald-500 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#18181b] sm:w-auto"
         >
           {saving ? "Saving…" : dirty ? "Save changes" : "No changes"}
         </button>
@@ -875,12 +927,12 @@ function ManagePollPanel({
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            className="inline-flex items-center gap-2 rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:bg-rose-100 hover:shadow-[2px_2px_0_0_#18181b]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:bg-rose-100 hover:shadow-[2px_2px_0_0_#18181b] sm:ml-auto sm:w-auto"
           >
             🗑 Delete poll
           </button>
         ) : (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-zinc-900 bg-rose-100 px-3 py-2 shadow-[3px_3px_0_0_#18181b]">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-zinc-900 bg-rose-100 px-3 py-2 shadow-[3px_3px_0_0_#18181b] sm:ml-auto">
             <span className="text-[11px] font-black uppercase tracking-widest">
               Delete forever?
             </span>
@@ -925,8 +977,8 @@ function ToggleRow({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border-2 border-zinc-900 bg-stone-50 px-4 py-3 shadow-[2px_2px_0_0_#18181b]">
-      <div>
+    <div className="flex items-start justify-between gap-3 rounded-lg border-2 border-zinc-900 bg-stone-50 px-3 py-3 shadow-[2px_2px_0_0_#18181b] sm:px-4">
+      <div className="min-w-0 flex-1 pr-1">
         <p className="text-sm font-black tracking-tight">{label}</p>
         <p className="text-[11px] font-semibold text-zinc-500">{description}</p>
       </div>

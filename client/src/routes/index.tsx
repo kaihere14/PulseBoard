@@ -53,7 +53,7 @@ function Landing() {
             Full-stack polling, made playful
           </p>
 
-          <h1 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+          <h1 className="mt-4 text-balance text-3xl font-black leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
             Ask a question.{" "}
             <span className="relative inline-block">
               <span className="absolute inset-x-1 bottom-2 z-0 h-4 bg-lime-300" aria-hidden />

@@ -63,14 +63,15 @@ function SuccessModal({ slug, onClose }: { slug: string; onClose: () => void }) 
         </div>
 
         {/* QR Code */}
-        <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4">
-          <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[4px_4px_0_0_#18181b]">
+        <div className="flex max-h-[min(50vh,420px)] flex-col items-center gap-3 overflow-auto px-6 pt-6 pb-4">
+          <div className="flex max-w-full justify-center rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[4px_4px_0_0_#18181b]">
             <QRCodeSVG
               value={quizUrl}
               size={180}
               bgColor="#ffffff"
               fgColor="#18181b"
               level="M"
+              className="h-auto w-full max-w-[min(100vw-6rem,180px)]"
             />
           </div>
           <p className="text-xs text-zinc-500">Scan to open the quiz</p>
@@ -244,7 +245,7 @@ function CreateQuiz() {
         />
       ) : null}
       <header className="border-b-2 border-zinc-900 bg-amber-200">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <button
             type="button"
             onClick={() => void navigate({ to: "/home" })}
@@ -258,12 +259,12 @@ function CreateQuiz() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-6 py-10">
+      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-10">
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
             Step 1 of 2
           </p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
+          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight md:text-5xl">
             Build a quiz worth taking.
           </h1>
           <p className="mt-3 max-w-2xl text-base text-zinc-600">
@@ -272,7 +273,7 @@ function CreateQuiz() {
         </div>
 
         {/* Basics card */}
-        <section className="mb-8 rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-[6px_6px_0_0_#18181b] md:p-8">
+        <section className="mb-8 rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-6 md:p-8">
           <div className="mb-6 flex items-center gap-3">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-lime-200 text-sm font-bold">
               1
@@ -346,14 +347,16 @@ function CreateQuiz() {
 
         {/* Questions */}
         <section className="mb-8">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-sky-200 text-sm font-bold">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-zinc-900 bg-sky-200 text-sm font-bold">
               2
             </span>
-            <h2 className="text-xl font-semibold tracking-tight">Questions</h2>
-            <span className="ml-auto rounded-full border-2 border-zinc-900 bg-white px-3 py-0.5 text-xs font-semibold">
-              {questions.length} total
-            </span>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+              <h2 className="text-xl font-semibold tracking-tight">Questions</h2>
+              <span className="ml-auto shrink-0 rounded-full border-2 border-zinc-900 bg-white px-3 py-0.5 text-xs font-semibold sm:ml-0">
+                {questions.length} total
+              </span>
+            </div>
           </div>
 
           <ul className="space-y-5">
@@ -362,26 +365,28 @@ function CreateQuiz() {
               return (
                 <li
                   key={q.id}
-                  className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] md:p-6"
+                  className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-5 md:p-6"
                 >
-                  <div className="mb-4 flex items-start gap-3">
-                    <span
-                      className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg border-2 border-zinc-900 ${accent} px-2 text-sm font-bold`}
-                    >
-                      Q{qIndex + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={q.question}
-                      onChange={(e) => updateQuestion(q.id, { question: e.currentTarget.value })}
-                      placeholder="Type your question…"
-                      className="flex-1 rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
-                    />
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <span
+                        className={`inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border-2 border-zinc-900 ${accent} px-2 text-sm font-bold`}
+                      >
+                        Q{qIndex + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={q.question}
+                        onChange={(e) => updateQuestion(q.id, { question: e.currentTarget.value })}
+                        placeholder="Type your question…"
+                        className="min-w-0 flex-1 rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeQuestion(q.id)}
                       disabled={questions.length === 1}
-                      className="rounded-lg border-2 border-zinc-900 bg-rose-200 px-3 py-2 text-xs font-bold uppercase tracking-wide shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_0_#18181b]"
+                      className="w-full shrink-0 rounded-lg border-2 border-zinc-900 bg-rose-200 px-3 py-2.5 text-xs font-bold uppercase tracking-wide shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_0_#18181b] sm:w-auto sm:self-start sm:py-2"
                       title="Remove question"
                     >
                       Remove
@@ -390,22 +395,24 @@ function CreateQuiz() {
 
                   <ul className="space-y-2">
                     {q.options.map((opt, optIndex) => (
-                      <li key={optIndex} className="flex items-center gap-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-zinc-900 bg-stone-100 text-xs font-bold">
-                          {String.fromCharCode(65 + optIndex)}
-                        </span>
-                        <input
-                          type="text"
-                          value={opt}
-                          onChange={(e) => updateOption(q.id, optIndex, e.currentTarget.value)}
-                          placeholder={`Option ${optIndex + 1}`}
-                          className="flex-1 rounded-lg border-2 border-zinc-900 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
-                        />
+                      <li key={optIndex} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-zinc-900 bg-stone-100 text-xs font-bold">
+                            {String.fromCharCode(65 + optIndex)}
+                          </span>
+                          <input
+                            type="text"
+                            value={opt}
+                            onChange={(e) => updateOption(q.id, optIndex, e.currentTarget.value)}
+                            placeholder={`Option ${optIndex + 1}`}
+                            className="min-w-0 flex-1 rounded-lg border-2 border-zinc-900 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeOption(q.id, optIndex)}
                           disabled={q.options.length <= 2}
-                          className="rounded-md border-2 border-zinc-900 bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0_0_#18181b]"
+                          className="self-end rounded-md border-2 border-zinc-900 bg-white px-3 py-2 text-xs font-bold shadow-[2px_2px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0_0_#18181b] sm:self-center sm:px-2 sm:py-1.5"
                           title="Remove option"
                         >
                           ✕
@@ -449,7 +456,7 @@ function CreateQuiz() {
         </section>
 
         {/* Footer actions */}
-        <section className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] md:p-6">
+        <section className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-5 md:p-6">
           {error && submitState === "error" ? (
             <p className="mb-4 rounded-md border-2 border-zinc-900 bg-rose-100 px-4 py-3 text-sm font-medium">
               {error}

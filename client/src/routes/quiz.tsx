@@ -174,21 +174,21 @@ function QuizPage() {
   return (
     <div className="min-h-screen bg-stone-100 text-zinc-900">
       <header className="border-b-2 border-zinc-900 bg-amber-200">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <button
             type="button"
             onClick={() => void navigate({ to: "/home" })}
-            className="flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:underline"
+            className="flex shrink-0 items-center gap-2 text-xs font-black uppercase tracking-widest hover:underline sm:text-sm"
           >
             ← Back
           </button>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-700">
+          <p className="max-w-[55%] truncate text-right text-[10px] font-black uppercase tracking-[0.3em] text-zinc-700 sm:max-w-none">
             PulseBoard
           </p>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl px-6 py-10">
+      <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         {fetchState === "loading" && (
           <div className="flex flex-col items-center gap-4 py-24">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-900 border-t-amber-400" />
@@ -473,9 +473,9 @@ function QuizView({
   return (
     <div>
       {/* Poll header */}
-      <div className="relative rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-[6px_6px_0_0_#18181b] md:p-8">
+      <div className="relative rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-6 md:p-8">
         <span
-          className={`absolute -right-3 -top-3 rounded-md border-2 border-zinc-900 px-2 py-1 text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] ${statusStyles[poll.status] ?? "bg-stone-200"}`}
+          className={`absolute right-2 top-2 rounded-md border-2 border-zinc-900 px-2 py-1 text-[10px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] sm:-right-3 sm:-top-3 sm:text-[10px] ${statusStyles[poll.status] ?? "bg-stone-200"}`}
         >
           {poll.status}
         </span>
@@ -497,8 +497,8 @@ function QuizView({
           )}
         </div>
 
-        <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">{poll.title}</h1>
-        <p className="mt-2 font-mono text-[11px] font-semibold text-zinc-500">/{poll.slug}</p>
+        <h1 className="mt-3 text-balance wrap-break-word text-2xl font-black tracking-tight sm:text-3xl md:text-4xl">{poll.title}</h1>
+        <p className="mt-2 break-all font-mono text-[11px] font-semibold text-zinc-500">/{poll.slug}</p>
 
         {poll.expiresAt && (
           <p className="mt-2 text-xs font-semibold text-zinc-500">
@@ -529,16 +529,16 @@ function QuizView({
             const selected = selections[q._id];
             return (
               <li key={q._id}>
-                <article className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0_0_#18181b] md:p-6">
-                  <div className="flex items-start gap-3">
+                <article className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[4px_4px_0_0_#18181b] sm:p-5 md:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                     <span
                       className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-zinc-900 ${accent} text-xs font-black`}
                     >
                       {idx + 1}
                     </span>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-start justify-between gap-2">
-                        <p className="font-bold leading-snug">{q.question}</p>
+                        <p className="wrap-break-word font-bold leading-snug">{q.question}</p>
                         {q.isRequired ? (
                           <span className="shrink-0 rounded-md border-2 border-zinc-900 bg-rose-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
                             Required
@@ -559,7 +559,7 @@ function QuizView({
                                 type="button"
                                 disabled={isNotActive}
                                 onClick={() => onSelect(q._id, oIdx)}
-                                className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-all ${
+                                className={`flex w-full cursor-pointer items-start gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm font-semibold transition-all ${
                                   isChosen
                                     ? "border-zinc-900 bg-emerald-100 shadow-[3px_3px_0_0_#18181b]"
                                     : "border-zinc-900 bg-stone-50 shadow-[2px_2px_0_0_#18181b] hover:bg-amber-50 hover:shadow-[3px_3px_0_0_#18181b]"
@@ -572,7 +572,7 @@ function QuizView({
                                 >
                                   {isChosen ? "✓" : String.fromCharCode(65 + oIdx)}
                                 </span>
-                                {option}
+                                <span className="min-w-0 flex-1 wrap-break-word">{option}</span>
                               </button>
                             </li>
                           );
@@ -593,21 +593,21 @@ function QuizView({
 
       {/* Submit section */}
       {!isNotActive && questions.length > 0 && (
-        <div className="mt-6 rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] md:p-6">
+        <div className="mt-6 rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-5 md:p-6">
           {submitState === "error" && submitError && (
             <p className="mb-4 rounded-md border-2 border-zinc-900 bg-rose-100 px-4 py-3 text-sm font-semibold">
               {submitError}
             </p>
           )}
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs font-semibold text-zinc-500">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <p className="text-center text-xs font-semibold text-zinc-500 sm:text-left">
               {Object.keys(selections).length} / {questions.length} answered
             </p>
             <button
               type="button"
               onClick={onSubmit}
               disabled={submitState === "submitting"}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-zinc-900 bg-emerald-500 px-6 py-3 text-sm font-black uppercase tracking-widest text-white shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#18181b]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-zinc-900 bg-emerald-500 px-6 py-3 text-sm font-black uppercase tracking-widest text-white shadow-[4px_4px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_#18181b] active:translate-y-1 active:shadow-[1px_1px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#18181b] sm:w-auto sm:shrink-0"
             >
               {submitState === "submitting" ? (
                 <>
