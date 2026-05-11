@@ -138,7 +138,8 @@ The application will be available at `http://localhost:5173`.
 1. Sign in using the landing page.
 2. Navigate to the **Home** dashboard.
 3. Click **"Create quiz"** to start the creation flow.
-4. Save your quiz to generate a unique join code for participants (the system now confirms saving rather than publishing).
+4. Save your quiz to generate a unique join code and QR code for participants.
+5. Click **"Close & view analytics"** to be automatically redirected to the quiz's analytics page.
 
 ### Joining a Quiz 🤝
 
@@ -149,7 +150,7 @@ The application will be available at `http://localhost:5173`.
 ### Analyzing Results 📈
 
 1. Access your dashboard to see a list of your quizzes, now featuring more descriptive visibility labels.
-2. Click on any quiz to view its **Analytics** page.
+2. Click on any quiz to view its **Analytics** page (or navigate there directly after creating a quiz).
 3. Review detailed response statistics. Note that access to analytics for unpublished quizzes is restricted to authorized users.
 4. Manage the quiz lifecycle by toggling between draft, active, and expired states.
 ## 🔌 API Documentation
