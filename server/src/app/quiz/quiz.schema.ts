@@ -1,7 +1,48 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, type HydratedDocument, type Types } from "mongoose";
 
+export interface IPoll {
+  title: string;
+  creatorId: Types.ObjectId;
+  slug: string;
+  isAnonymousPoll: boolean;
+  isPublished: boolean;
+  status: "draft" | "active" | "expired";
+  expiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-const pollSchema = new Schema(
+export interface IQuestion {
+  pollId: Types.ObjectId;
+  question: string;
+  isRequired: boolean;
+  options: string[];
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IResponse {
+  pollId: Types.ObjectId;
+  voterId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IAnswer {
+  responseId: Types.ObjectId;
+  questionId: Types.ObjectId;
+  selectedOptionIndex: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type PollDocument = HydratedDocument<IPoll>;
+export type QuestionDocument = HydratedDocument<IQuestion>;
+export type ResponseDocument = HydratedDocument<IResponse>;
+export type AnswerDocument = HydratedDocument<IAnswer>;
+
+const pollSchema = new Schema<IPoll>(
   {
     title: {
       type: String,
@@ -45,7 +86,7 @@ pollSchema.index({ expiresAt: 1 }, { sparse: true });
 
 
 
-const questionSchema = new Schema(
+const questionSchema = new Schema<IQuestion>(
   {
     pollId: {
       type: Schema.Types.ObjectId,
@@ -81,7 +122,7 @@ const questionSchema = new Schema(
 
 
 
-const responseSchema = new Schema(
+const responseSchema = new Schema<IResponse>(
     {
       pollId: {
         type: Schema.Types.ObjectId,
@@ -107,7 +148,7 @@ const responseSchema = new Schema(
   
 
   
-const answerSchema = new Schema({
+const answerSchema = new Schema<IAnswer>({
     responseId: {
       type: Schema.Types.ObjectId,
       ref: "Response",
@@ -127,8 +168,8 @@ const answerSchema = new Schema({
     },
   },{timestamps: true});
   
-export const Response = model("Response", responseSchema);
-export const Answer = model("Answer", answerSchema);
+export const Response = model<IResponse>("Response", responseSchema);
+export const Answer = model<IAnswer>("Answer", answerSchema);
 
-export const Poll = model("Poll", pollSchema);
-export const Question = model("Question", questionSchema);
+export const Poll = model<IPoll>("Poll", pollSchema);
+export const Question = model<IQuestion>("Question", questionSchema);
