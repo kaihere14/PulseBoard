@@ -32,6 +32,24 @@ function persistVoterId(pollId: string, voterId: string) {
   localStorage.setItem(voterKey(pollId), voterId);
 }
 
+function normalizeQuizExpiry(quiz: QuizDetail): QuizDetail {
+  if (quiz.poll.status === "expired" || quiz.poll.expiresAt === null) {
+    return quiz;
+  }
+
+  if (new Date(quiz.poll.expiresAt).getTime() > Date.now()) {
+    return quiz;
+  }
+
+  return {
+    ...quiz,
+    poll: {
+      ...quiz.poll,
+      status: "expired",
+    },
+  };
+}
+
 function QuizPage() {
   const { id: slug } = Route.useSearch();
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -45,6 +63,8 @@ function QuizPage() {
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const quizExpiresAt = quiz?.poll.expiresAt ?? null;
+  const quizStatus = quiz?.poll.status ?? null;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -61,9 +81,10 @@ function QuizPage() {
         setFetchState("loading");
         const token = isSignedIn ? await getToken() : null;
         const data = await getQuizBySlug(slug, token);
+        const normalizedQuiz = normalizeQuizExpiry(data);
         if (cancelled) return;
 
-        if (data.poll.isPublished) {
+        if (normalizedQuiz.poll.isPublished) {
           void navigate({
             to: "/analytics",
             search: { id: slug },
@@ -72,9 +93,9 @@ function QuizPage() {
           return;
         }
 
-        setQuiz(data);
+        setQuiz(normalizedQuiz);
         setFetchState("done");
-        if (data.poll.isAnonymousPoll && hasAlreadyVoted(data.poll._id)) {
+        if (normalizedQuiz.poll.isAnonymousPoll && hasAlreadyVoted(normalizedQuiz.poll._id)) {
           setSubmitState("already_voted");
         }
       } catch (err) {
@@ -92,6 +113,24 @@ function QuizPage() {
       cancelled = true;
     };
   }, [isLoaded, isSignedIn, slug, getToken, navigate]);
+
+  useEffect(() => {
+    if (!quizExpiresAt || quizStatus === "expired") {
+      return;
+    }
+
+    const remainingMs = new Date(quizExpiresAt).getTime() - Date.now();
+    const timeoutId = window.setTimeout(
+      () => {
+      setQuiz((currentQuiz) => (currentQuiz ? normalizeQuizExpiry(currentQuiz) : currentQuiz));
+      },
+      Math.max(remainingMs, 0)
+    );
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [quizExpiresAt, quizStatus]);
 
   const handleSelect = (questionId: string, optionIndex: number) => {
     setSelections((prev) => ({ ...prev, [questionId]: optionIndex }));

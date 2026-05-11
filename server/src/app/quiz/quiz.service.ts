@@ -65,6 +65,38 @@ export interface QuizAnalytics {
   questions: QuestionAnalytics[];
 }
 
+function shouldMarkPollExpired(poll: Pick<PollDocument, "status" | "expiresAt">): boolean {
+  return (
+    poll.status !== "expired" &&
+    poll.expiresAt !== null &&
+    poll.expiresAt.getTime() <= Date.now()
+  );
+}
+
+async function ensurePollExpiryState(poll: PollDocument): Promise<PollDocument> {
+  if (!shouldMarkPollExpired(poll)) {
+    return poll;
+  }
+
+  poll.status = "expired";
+  await poll.save();
+  return poll;
+}
+
+function toQuizSummary(poll: PollDocument): QuizSummary {
+  return {
+    _id: poll._id.toString(),
+    title: poll.title,
+    slug: poll.slug,
+    status: poll.status,
+    isPublished: poll.isPublished,
+    isAnonymousPoll: poll.isAnonymousPoll,
+    expiresAt: poll.expiresAt,
+    createdAt: poll.createdAt,
+    updatedAt: poll.updatedAt,
+  };
+}
+
 function slugifyTitle(title: string): string {
   return (
     title
@@ -96,22 +128,32 @@ export async function getQuizzesByUser(userId: string): Promise<QuizSummary[]> {
 
   const polls = await Poll.find({ creatorId: user._id })
     .select("_id title slug status isPublished isAnonymousPoll expiresAt createdAt updatedAt")
-    .sort({ createdAt: -1 })
-    .lean<QuizSummary[]>();
+    .sort({ createdAt: -1 });
 
-  return polls;
+  const normalizedPolls = await Promise.all(polls.map((poll) => ensurePollExpiryState(poll)));
+  return normalizedPolls.map((poll) => toQuizSummary(poll));
 }
 
 export async function getPollBySlug(slug: string): Promise<PollDocument | null> {
-  return Poll.findOne({ slug });
+  const poll = await Poll.findOne({ slug });
+  if (!poll) {
+    return null;
+  }
+
+  return ensurePollExpiryState(poll);
 }
 
 export async function getPollById(pollId: string): Promise<PollDocument | null> {
-  return Poll.findById(pollId);
+  const poll = await Poll.findById(pollId);
+  if (!poll) {
+    return null;
+  }
+
+  return ensurePollExpiryState(poll);
 }
 
 export async function getQuizBySlug(slug: string): Promise<QuizDetail | null> {
-  const poll = await Poll.findOne({ slug });
+  const poll = await getPollBySlug(slug);
   if (!poll) return null;
 
   const questions = await Question.find({ pollId: poll._id }).sort({ order: 1 });
@@ -178,7 +220,7 @@ export async function submitQuizResponse(
   dto: SubmitQuizResponseDto,
   resolvedVoterId: string
 ): Promise<SubmitQuizResult> {
-  const poll = await Poll.findById(dto.pollId);
+  const poll = await getPollById(dto.pollId);
   if (!poll) {
     throw makeError("Quiz not found", "NOT_FOUND");
   }
@@ -188,7 +230,7 @@ export async function submitQuizResponse(
   if (poll.isPublished) {
     throw makeError("Quiz is closed — results are public", "NOT_ACCEPTING");
   }
-  if (poll.status === "expired" || (poll.expiresAt && poll.expiresAt < new Date())) {
+  if (poll.status === "expired") {
     throw makeError("Quiz has expired", "EXPIRED");
   }
 
@@ -244,7 +286,8 @@ export async function submitQuizResponse(
 }
 
 export async function getQuizAnalytics(poll: PollDocument): Promise<QuizAnalytics> {
-  const pollId = poll._id;
+  const normalizedPoll = await ensurePollExpiryState(poll);
+  const pollId = normalizedPoll._id;
 
   const [questions, totalResponses, responseDocs] = await Promise.all([
     Question.find({ pollId }).sort({ order: 1 }).lean(),
@@ -313,15 +356,15 @@ export async function getQuizAnalytics(poll: PollDocument): Promise<QuizAnalytic
 
   return {
     poll: {
-      _id: poll._id.toString(),
-      title: poll.title,
-      slug: poll.slug,
-      status: poll.status,
-      isPublished: poll.isPublished,
-      isAnonymousPoll: poll.isAnonymousPoll,
-      expiresAt: poll.expiresAt,
-      createdAt: poll.createdAt,
-      updatedAt: poll.updatedAt,
+      _id: normalizedPoll._id.toString(),
+      title: normalizedPoll.title,
+      slug: normalizedPoll.slug,
+      status: normalizedPoll.status,
+      isPublished: normalizedPoll.isPublished,
+      isAnonymousPoll: normalizedPoll.isAnonymousPoll,
+      expiresAt: normalizedPoll.expiresAt,
+      createdAt: normalizedPoll.createdAt,
+      updatedAt: normalizedPoll.updatedAt,
     },
     totalResponses,
     questions: questionsAnalytics,
@@ -361,7 +404,7 @@ export async function updatePollBySlug(
   }
 
   await poll.save();
-  return poll;
+  return ensurePollExpiryState(poll);
 }
 
 export async function deletePollBySlug(userId: string, slug: string): Promise<void> {
