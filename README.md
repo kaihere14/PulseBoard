@@ -1,4 +1,3 @@
-
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -153,6 +152,7 @@ The application will be available at `http://localhost:5173`.
 2. Click on any quiz to view its **Analytics** page (or navigate there directly after creating a quiz).
 3. Review detailed response statistics. Note that access to analytics for unpublished quizzes is restricted to authorized users.
 4. Manage the quiz lifecycle by toggling between draft, active, and expired states.
+
 ## 🔌 API Documentation
 
 ### Authentication
