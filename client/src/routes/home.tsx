@@ -1,5 +1,5 @@
 import { UserButton, useAuth, useUser } from "@clerk/react";
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getUserQuizzes, type QuizSummary } from "../lib/api";
 
@@ -115,7 +115,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-stone-100 text-zinc-900">
       <header className="border-b-2 border-zinc-900 bg-amber-200">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg ">
               <img src="/src/logo.svg" alt="hello"/>
@@ -127,14 +127,14 @@ function Home() {
               <h1 className="text-lg font-bold tracking-tight">Home base</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg border-2 border-zinc-900 bg-white px-3 py-1.5 text-right shadow-[3px_3px_0_0_#18181b]">
-              <p className="text-sm font-bold leading-tight">{name}</p>
+          <div className="flex w-full items-start justify-between gap-3 sm:w-auto sm:items-center sm:justify-end">
+            <div className="min-w-0 flex-1 rounded-lg border-2 border-zinc-900 bg-white px-3 py-1.5 text-left shadow-[3px_3px_0_0_#18181b] sm:max-w-xs sm:flex-none sm:text-right">
+              <p className="truncate text-sm font-bold leading-tight">{name}</p>
               {primaryEmail ? (
-                <p className="text-[11px] text-zinc-600 leading-tight">{primaryEmail}</p>
+                <p className="truncate text-[11px] leading-tight text-zinc-600">{primaryEmail}</p>
               ) : null}
             </div>
-            <div className="rounded-full border-2 border-zinc-900 bg-white p-0.5 shadow-[3px_3px_0_0_#18181b]">
+            <div className="shrink-0 rounded-full border-2 border-zinc-900 bg-white p-0.5 shadow-[3px_3px_0_0_#18181b]">
               <UserButton />
             </div>
           </div>
@@ -308,44 +308,56 @@ function Home() {
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {quizzes.map((quiz) => (
                 <li key={quiz._id}>
-                  <article className="flex h-full flex-col rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0_0_#18181b] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#18181b]">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-base font-bold leading-snug tracking-tight line-clamp-2">
-                        {quiz.title}
-                      </h3>
-                      <StatusBadge status={quiz.status} />
-                    </div>
+                  <Link
+                    to="/analytics"
+                    search={{ id: quiz.slug }}
+                    className="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-100"
+                    aria-label={`View analytics for ${quiz.title}`}
+                  >
+                    <article className="flex h-full flex-col rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0_0_#18181b] transition-all group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0_0_#18181b]">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-base font-bold leading-snug tracking-tight line-clamp-2">
+                          {quiz.title}
+                        </h3>
+                        <StatusBadge status={quiz.status} />
+                      </div>
 
-                    <p className="mt-2 font-mono text-[11px] font-semibold text-zinc-500">
-                      /{quiz.slug}
-                    </p>
+                      <p className="mt-2 font-mono text-[11px] font-semibold text-zinc-500">
+                        /{quiz.slug}
+                      </p>
 
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {quiz.isAnonymousPoll && (
-                        <span className="rounded-full border-2 border-zinc-900 bg-rose-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-                          Anonymous
-                        </span>
-                      )}
-                      {quiz.isPublished ? (
-                        <span className="rounded-full border-2 border-zinc-900 bg-lime-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-                          Published
-                        </span>
-                      ) : (
-                        <span className="rounded-full border-2 border-zinc-900 bg-stone-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-                          Unpublished
-                        </span>
-                      )}
-                    </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {quiz.isAnonymousPoll && (
+                          <span className="rounded-full border-2 border-zinc-900 bg-rose-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
+                            Anonymous
+                          </span>
+                        )}
+                        {quiz.isPublished ? (
+                          <span className="rounded-full border-2 border-zinc-900 bg-lime-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
+                            Published
+                          </span>
+                        ) : (
+                          <span className="rounded-full border-2 border-zinc-900 bg-stone-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
+                            Unpublished
+                          </span>
+                        )}
+                      </div>
 
-                    <p className="mt-auto pt-4 text-[11px] font-semibold text-zinc-400">
-                      Created{" "}
-                      {new Date(quiz.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </article>
+                      <div className="mt-auto flex items-end justify-between gap-2 pt-4">
+                        <p className="text-[11px] font-semibold text-zinc-400">
+                          Created{" "}
+                          {new Date(quiz.createdAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                        <span className="inline-flex items-center gap-1 rounded-md border-2 border-zinc-900 bg-amber-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest opacity-80 transition-all group-hover:translate-x-0.5 group-hover:opacity-100">
+                          Analytics →
+                        </span>
+                      </div>
+                    </article>
+                  </Link>
                 </li>
               ))}
             </ul>

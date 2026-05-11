@@ -1,8 +1,14 @@
 import type { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
-import { createQuizSchema, getQuizBySlugSchema, submitQuizResponseSchema } from "./quiz.dto";
+import {
+  createQuizSchema,
+  getQuizBySlugSchema,
+  submitQuizResponseSchema,
+  updatePollSchema,
+} from "./quiz.dto";
 import type { CreateQuizResult, SubmitQuizResult } from "./quiz.service";
 import * as quizService from "./quiz.service";
+import { getOrCreateUser } from "../authentication/auth.services";
 
 
 export const createQuiz = async (req: Request, res: Response) => {
@@ -140,8 +146,9 @@ export const getQuizBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Quiz not found" });
     }
 
-    // Step 2 — enforce auth for non-anonymous quizzes
-    if (!poll.isAnonymousPoll) {
+    // Step 2 — non-anonymous + unpublished quizzes are only visible to signed-in users.
+    // Published polls are public to view; voting still requires login in submitAnswer.
+    if (!poll.isAnonymousPoll && !poll.isPublished) {
       const { userId } = getAuth(req);
       if (!userId) {
         return res.status(401).json({
@@ -165,3 +172,138 @@ export const getQuizBySlug = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to fetch quiz" });
   }
 };
+
+export const getQuizAnalytics = async (req: Request, res: Response) => {
+  const parsedParams = getQuizBySlugSchema.safeParse(req.params);
+  if (!parsedParams.success) {
+    return res.status(400).json({
+      error: "Invalid slug",
+      details: parsedParams.error.flatten(),
+    });
+  }
+
+  const { slug } = parsedParams.data;
+
+  try {
+    const poll = await quizService.getPollBySlug(slug);
+    if (!poll) {
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+
+    // Resolve creator status up-front so we can both gate access and tell the
+    // client whether to render management controls.
+    const { userId } = getAuth(req);
+    let isCreator = false;
+    if (userId) {
+      const { user } = await getOrCreateUser(userId);
+      isCreator = poll.creatorId.toString() === user._id.toString();
+    }
+
+    // Unpublished quizzes are private — only the creator can view analytics.
+    if (!poll.isPublished) {
+      if (!userId) {
+        return res.status(401).json({
+          error: "Login required to view analytics for this quiz",
+          code: "LOGIN_REQUIRED",
+        });
+      }
+      if (!isCreator) {
+        return res.status(403).json({
+          error: "Only the creator can view analytics for this quiz",
+        });
+      }
+    }
+
+    const analytics = await quizService.getQuizAnalytics(poll);
+    return res.status(200).json({ ...analytics, isCreator });
+  } catch (error: unknown) {
+    console.error(
+      `[Quiz] Error fetching quiz analytics: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return res.status(500).json({ error: "Failed to fetch quiz analytics" });
+  }
+};
+
+export const updateQuiz = async (req: Request, res: Response) => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const parsedParams = getQuizBySlugSchema.safeParse(req.params);
+  if (!parsedParams.success) {
+    return res.status(400).json({
+      error: "Invalid slug",
+      details: parsedParams.error.flatten(),
+    });
+  }
+
+  const parsedBody = updatePollSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({
+      error: "Invalid update payload",
+      details: parsedBody.error.flatten(),
+    });
+  }
+
+  try {
+    const poll = await quizService.updatePollBySlug(
+      userId,
+      parsedParams.data.slug,
+      parsedBody.data
+    );
+    return res.status(200).json({ poll });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      const serviceCode = (error as Error & { serviceCode?: string }).serviceCode;
+      if (serviceCode === "NOT_FOUND") {
+        return res.status(404).json({ error: error.message });
+      }
+      if (serviceCode === "FORBIDDEN") {
+        return res.status(403).json({ error: error.message });
+      }
+    }
+
+    console.error(
+      `[Quiz] Error updating quiz: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return res.status(500).json({ error: "Failed to update quiz" });
+  }
+};
+
+export const deleteQuiz = async (req: Request, res: Response) => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const parsedParams = getQuizBySlugSchema.safeParse(req.params);
+  if (!parsedParams.success) {
+    return res.status(400).json({
+      error: "Invalid slug",
+      details: parsedParams.error.flatten(),
+    });
+  }
+
+  try {
+    await quizService.deletePollBySlug(userId, parsedParams.data.slug);
+    return res.status(200).json({ success: true });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      const serviceCode = (error as Error & { serviceCode?: string }).serviceCode;
+      if (serviceCode === "NOT_FOUND") {
+        return res.status(404).json({ error: error.message });
+      }
+      if (serviceCode === "FORBIDDEN") {
+        return res.status(403).json({ error: error.message });
+      }
+    }
+
+    console.error(
+      `[Quiz] Error deleting quiz: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return res.status(500).json({ error: "Failed to delete quiz" });
+  }
+};
+
+

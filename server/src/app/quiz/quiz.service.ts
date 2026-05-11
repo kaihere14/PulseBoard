@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { getOrCreateUser } from "../authentication/auth.services";
-import type { CreateQuizDto, SubmitQuizResponseDto } from "./quiz.dto";
+import type { CreateQuizDto, SubmitQuizResponseDto, UpdatePollDto } from "./quiz.dto";
 import { Poll, Question, Response, Answer } from "./quiz.schema";
 import type { PollDocument, QuestionDocument, ResponseDocument, AnswerDocument } from "./quiz.schema";
 
@@ -31,6 +31,38 @@ export interface CreateQuizResult {
 export interface SubmitQuizResult {
   response: ResponseDocument;
   answers: AnswerDocument[];
+}
+
+export interface OptionAnalytics {
+  optionIndex: number;
+  optionText: string;
+  count: number;
+  percentage: number;
+}
+
+export interface QuestionAnalytics {
+  questionId: string;
+  question: string;
+  isRequired: boolean;
+  order: number;
+  totalAnswers: number;
+  options: OptionAnalytics[];
+}
+
+export interface QuizAnalytics {
+  poll: {
+    _id: string;
+    title: string;
+    slug: string;
+    status: string;
+    isPublished: boolean;
+    isAnonymousPoll: boolean;
+    expiresAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  totalResponses: number;
+  questions: QuestionAnalytics[];
 }
 
 function slugifyTitle(title: string): string {
@@ -203,6 +235,161 @@ export async function submitQuizResponse(
 
     if (!result) throw new Error("Submit transaction failed");
     return result;
+  } finally {
+    await session.endSession();
+  }
+}
+
+export async function getQuizAnalytics(poll: PollDocument): Promise<QuizAnalytics> {
+  const pollId = poll._id;
+
+  const [questions, totalResponses, responseDocs] = await Promise.all([
+    Question.find({ pollId }).sort({ order: 1 }).lean(),
+    Response.countDocuments({ pollId }),
+    Response.find({ pollId }).select("_id").lean(),
+  ]);
+
+  const responseIds = responseDocs.map((r) => r._id);
+
+  type OptionCountRow = {
+    _id: { questionId: Types.ObjectId; selectedOptionIndex: number };
+    count: number;
+  };
+
+  // Skip the aggregation pipeline entirely when nobody has responded yet
+  const counts: OptionCountRow[] =
+    responseIds.length > 0
+      ? await Answer.aggregate<OptionCountRow>([
+          { $match: { responseId: { $in: responseIds } } },
+          {
+            $group: {
+              _id: {
+                questionId: "$questionId",
+                selectedOptionIndex: "$selectedOptionIndex",
+              },
+              count: { $sum: 1 },
+            },
+          },
+        ])
+      : [];
+
+  // questionId -> (optionIndex -> count)
+  const countMap = new Map<string, Map<number, number>>();
+  for (const row of counts) {
+    const qid = row._id.questionId.toString();
+    const inner = countMap.get(qid) ?? new Map<number, number>();
+    inner.set(row._id.selectedOptionIndex, row.count);
+    countMap.set(qid, inner);
+  }
+
+  const questionsAnalytics: QuestionAnalytics[] = questions.map((q) => {
+    const optionCounts = countMap.get(q._id.toString()) ?? new Map<number, number>();
+    let totalAnswers = 0;
+    for (const v of optionCounts.values()) totalAnswers += v;
+
+    const options: OptionAnalytics[] = q.options.map((opt, idx) => {
+      const c = optionCounts.get(idx) ?? 0;
+      const pct = totalAnswers > 0 ? (c / totalAnswers) * 100 : 0;
+      return {
+        optionIndex: idx,
+        optionText: opt,
+        count: c,
+        percentage: Math.round(pct * 100) / 100,
+      };
+    });
+
+    return {
+      questionId: q._id.toString(),
+      question: q.question,
+      isRequired: q.isRequired,
+      order: q.order,
+      totalAnswers,
+      options,
+    };
+  });
+
+  return {
+    poll: {
+      _id: poll._id.toString(),
+      title: poll.title,
+      slug: poll.slug,
+      status: poll.status,
+      isPublished: poll.isPublished,
+      isAnonymousPoll: poll.isAnonymousPoll,
+      expiresAt: poll.expiresAt,
+      createdAt: poll.createdAt,
+      updatedAt: poll.updatedAt,
+    },
+    totalResponses,
+    questions: questionsAnalytics,
+  };
+}
+
+export async function isPollCreator(
+  userId: string,
+  poll: PollDocument
+): Promise<boolean> {
+  const { user } = await getOrCreateUser(userId);
+  return poll.creatorId.toString() === user._id.toString();
+}
+
+export async function updatePollBySlug(
+  userId: string,
+  slug: string,
+  data: UpdatePollDto
+): Promise<PollDocument> {
+  const { user } = await getOrCreateUser(userId);
+  const poll = await Poll.findOne({ slug });
+  if (!poll) {
+    throw makeError("Quiz not found", "NOT_FOUND");
+  }
+  if (poll.creatorId.toString() !== user._id.toString()) {
+    throw makeError("Only the creator can modify this quiz", "FORBIDDEN");
+  }
+
+  if (data.title !== undefined) poll.title = data.title;
+  if (data.status !== undefined) poll.status = data.status;
+  if (data.isPublished !== undefined) poll.isPublished = data.isPublished;
+  if (data.isAnonymousPoll !== undefined) poll.isAnonymousPoll = data.isAnonymousPoll;
+  if (data.expiresAt !== undefined) poll.expiresAt = data.expiresAt;
+
+  await poll.save();
+  return poll;
+}
+
+export async function deletePollBySlug(userId: string, slug: string): Promise<void> {
+  const { user } = await getOrCreateUser(userId);
+  const poll = await Poll.findOne({ slug });
+  if (!poll) {
+    throw makeError("Quiz not found", "NOT_FOUND");
+  }
+  if (poll.creatorId.toString() !== user._id.toString()) {
+    throw makeError("Only the creator can delete this quiz", "FORBIDDEN");
+  }
+
+  const pollId = poll._id;
+
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      // Wipe answers first (they're scoped by responseId), then responses,
+      // then questions, then the poll itself.
+      const responseIds = await Response.find({ pollId })
+        .select("_id")
+        .session(session)
+        .lean<{ _id: Types.ObjectId }[]>();
+
+      if (responseIds.length > 0) {
+        await Answer.deleteMany(
+          { responseId: { $in: responseIds.map((r) => r._id) } },
+          { session }
+        );
+      }
+
+      await Response.deleteMany({ pollId }, { session });
+      await Question.deleteMany({ pollId }, { session });
+      await Poll.deleteOne({ _id: pollId }, { session });
+    });
   } finally {
     await session.endSession();
   }

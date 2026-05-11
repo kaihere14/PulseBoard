@@ -34,8 +34,8 @@ function Landing() {
       <header className="border-b-2 border-zinc-900 bg-amber-200">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-zinc-900 bg-white text-base font-black shadow-[3px_3px_0_0_#18181b]">
-              P
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg">
+              <img src="/src/logo.svg" alt="hello" />
             </span>
             <p className="text-sm font-black uppercase tracking-[0.25em]">PulseBoard</p>
           </div>
@@ -45,7 +45,7 @@ function Landing() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12 md:flex-row md:gap-12 md:py-20">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12 md:flex-row md:gap-12 md:py-35 md:scale-120">
         <section className="flex flex-1 flex-col justify-center">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">
             Full-stack polling, made playful

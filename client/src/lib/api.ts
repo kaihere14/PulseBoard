@@ -63,6 +63,14 @@ export class LoginRequiredError extends Error {
   }
 }
 
+export class ForbiddenError extends Error {
+  readonly code = "FORBIDDEN" as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
 export class AlreadyVotedError extends Error {
   readonly code = "ALREADY_VOTED" as const;
   constructor() {
@@ -208,6 +216,84 @@ export async function submitQuizResponse(
   return data as SubmitAnswerResult;
 }
 
+export interface AnalyticsOption {
+  optionIndex: number;
+  optionText: string;
+  count: number;
+  percentage: number;
+}
+
+export interface AnalyticsQuestion {
+  questionId: string;
+  question: string;
+  isRequired: boolean;
+  order: number;
+  totalAnswers: number;
+  options: AnalyticsOption[];
+}
+
+export interface QuizAnalytics {
+  poll: {
+    _id: string;
+    title: string;
+    slug: string;
+    status: QuizStatus;
+    isPublished: boolean;
+    isAnonymousPoll: boolean;
+    expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  totalResponses: number;
+  questions: AnalyticsQuestion[];
+  isCreator: boolean;
+}
+
+export async function getQuizAnalytics(
+  slug: string,
+  token: string | null
+): Promise<QuizAnalytics> {
+  const response = await fetch(
+    `${apiOrigin()}/api/quiz/${encodeURIComponent(slug)}/analytics`,
+    {
+      method: "GET",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }
+  );
+
+  const text = await response.text();
+  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  if (response.status === 401) {
+    const code =
+      data && typeof data === "object" && "code" in data
+        ? (data as { code: unknown }).code
+        : null;
+    if (code === "LOGIN_REQUIRED") throw new LoginRequiredError();
+    throw new Error("Unauthorized");
+  }
+
+  if (response.status === 403) {
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : "You don't have permission to view this quiz's analytics.";
+    throw new ForbiddenError(message);
+  }
+
+  if (!response.ok) {
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : `Failed to fetch analytics (${response.status})`;
+    throw new Error(message);
+  }
+
+  return data as QuizAnalytics;
+}
+
 export async function createQuiz(
   token: string | null,
   payload: CreateQuizPayload
@@ -233,4 +319,100 @@ export async function createQuiz(
   }
 
   return data as CreateQuizResult;
+}
+
+export interface UpdatePollPayload {
+  title?: string;
+  status?: QuizStatus;
+  isPublished?: boolean;
+  isAnonymousPoll?: boolean;
+  expiresAt?: string | null;
+}
+
+export interface UpdatePollResult {
+  poll: {
+    _id: string;
+    title: string;
+    slug: string;
+    status: QuizStatus;
+    isPublished: boolean;
+    isAnonymousPoll: boolean;
+    expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export async function updateQuiz(
+  slug: string,
+  token: string | null,
+  payload: UpdatePollPayload
+): Promise<UpdatePollResult> {
+  const response = await fetch(
+    `${apiOrigin()}/api/quiz/${encodeURIComponent(slug)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const text = await response.text();
+  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  if (response.status === 403) {
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : "Only the creator can modify this quiz.";
+    throw new ForbiddenError(message);
+  }
+
+  if (!response.ok) {
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : `Failed to update quiz (${response.status})`;
+    throw new Error(message);
+  }
+
+  return data as UpdatePollResult;
+}
+
+export async function deleteQuiz(
+  slug: string,
+  token: string | null
+): Promise<void> {
+  const response = await fetch(
+    `${apiOrigin()}/api/quiz/${encodeURIComponent(slug)}`,
+    {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }
+  );
+
+  if (response.status === 403) {
+    const text = await response.text();
+    const data = text ? (JSON.parse(text) as unknown) : null;
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : "Only the creator can delete this quiz.";
+    throw new ForbiddenError(message);
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    const data = text ? (JSON.parse(text) as unknown) : null;
+    const message =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : `Failed to delete quiz (${response.status})`;
+    throw new Error(message);
+  }
 }

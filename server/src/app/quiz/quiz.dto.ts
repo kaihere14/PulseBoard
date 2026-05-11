@@ -79,8 +79,21 @@ export const getQuizBySlugSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
 });
 
+export const updatePollSchema = z
+  .object({
+    title: z.string().trim().min(1, "title is required").optional(),
+    status: quizStatusSchema.optional(),
+    isPublished: z.boolean().optional(),
+    isAnonymousPoll: z.boolean().optional(),
+    expiresAt: expiresAtSchema.optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
+
 export type CreateQuizDto = z.infer<typeof createQuizSchema>;
 export type CreateResponseDto = z.infer<typeof createResponseSchema>;
 export type CreateAnswerDto = z.infer<typeof createAnswerSchema>;
 export type SubmitQuizResponseDto = z.infer<typeof submitQuizResponseSchema>;
 export type GetQuizBySlugDto = z.infer<typeof getQuizBySlugSchema>;
+export type UpdatePollDto = z.infer<typeof updatePollSchema>;

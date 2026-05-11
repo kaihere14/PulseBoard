@@ -61,12 +61,22 @@ function QuizPage() {
         setFetchState("loading");
         const token = isSignedIn ? await getToken() : null;
         const data = await getQuizBySlug(slug, token);
-        if (!cancelled) {
-          setQuiz(data);
-          setFetchState("done");
-          if (data.poll.isAnonymousPoll && hasAlreadyVoted(data.poll._id)) {
-            setSubmitState("already_voted");
-          }
+        if (cancelled) return;
+
+        // Published polls: share links point at results (analytics), not the voting UI.
+        if (data.poll.isPublished) {
+          void navigate({
+            to: "/analytics",
+            search: { id: slug },
+            replace: true,
+          });
+          return;
+        }
+
+        setQuiz(data);
+        setFetchState("done");
+        if (data.poll.isAnonymousPoll && hasAlreadyVoted(data.poll._id)) {
+          setSubmitState("already_voted");
         }
       } catch (err) {
         if (cancelled) return;
@@ -82,7 +92,7 @@ function QuizPage() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, slug, getToken]);
+  }, [isLoaded, isSignedIn, slug, getToken, navigate]);
 
   const handleSelect = (questionId: string, optionIndex: number) => {
     setSelections((prev) => ({ ...prev, [questionId]: optionIndex }));
