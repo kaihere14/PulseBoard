@@ -141,20 +141,20 @@ function Home() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-6 py-10">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-          <div>
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">
               Hey, {firstName} 👋
             </p>
-            <h2 className="mt-2 text-4xl font-black tracking-tight md:text-5xl">
+            <h2 className="mt-2 text-balance text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
               What are we asking today?
             </h2>
             <p className="mt-3 max-w-xl text-base text-zinc-600">
               Spin up a quiz, or jump into one with a code. Either way — no boring forms.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             <span className="rounded-full border-2 border-zinc-900 bg-lime-200 px-3 py-1 text-[11px] font-bold uppercase tracking-widest">
               Live in seconds
             </span>
@@ -182,9 +182,9 @@ function Home() {
 
         <section className="grid gap-6 md:grid-cols-2">
           {/* Create card */}
-          <article className="relative rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-[6px_6px_0_0_#18181b] md:p-7">
+          <article className="relative rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] sm:p-6 md:p-7">
             <span
-              className="absolute -right-3 -top-3 rotate-3 rounded-md border-2 border-zinc-900 bg-emerald-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b]"
+              className="absolute right-2 top-2 rotate-3 rounded-md border-2 border-zinc-900 bg-emerald-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] sm:-right-3 sm:-top-3"
               aria-hidden
             >
               New ✦
@@ -226,9 +226,9 @@ function Home() {
           </article>
 
           {/* Join card */}
-          <article className="relative rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-[6px_6px_0_0_#18181b] md:p-7">
+          <article className="relative rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0_0_#18181b] sm:p-6 md:p-7">
             <span
-              className="absolute -left-3 -top-3 -rotate-3 rounded-md border-2 border-zinc-900 bg-sky-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b]"
+              className="absolute left-2 top-2 -rotate-3 rounded-md border-2 border-zinc-900 bg-sky-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b] sm:-left-3 sm:-top-3"
               aria-hidden
             >
               Got a code?
@@ -265,8 +265,8 @@ function Home() {
           </article>
         </section>
 
-        <section className="mt-10 rounded-2xl border-2 border-dashed border-zinc-900 bg-stone-50 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="mt-10 rounded-2xl border-2 border-dashed border-zinc-900 bg-stone-50 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-sm font-semibold text-zinc-700">
               Tip: turn on{" "}
               <span className="rounded-md border-2 border-zinc-900 bg-rose-200 px-1.5 py-0.5 text-xs font-bold">
@@ -281,8 +281,8 @@ function Home() {
         </section>
 
         <section className="mt-12">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-2xl font-black tracking-tight">Your quizzes</h2>
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-black tracking-tight sm:text-2xl">Your quizzes</h2>
             {quizFetchState === "loading" && (
               <span className="text-xs font-bold uppercase tracking-widest text-zinc-500 animate-pulse">
                 Loading…

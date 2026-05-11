@@ -9,6 +9,7 @@ import {
 import type { CreateQuizResult, SubmitQuizResult } from "./quiz.service";
 import * as quizService from "./quiz.service";
 import { getOrCreateUser } from "../authentication/auth.services";
+import { notifyAnalyticsChanged } from "../realtime/analyticsRealtime";
 
 
 export const createQuiz = async (req: Request, res: Response) => {
@@ -90,6 +91,7 @@ export const submitAnswer = async (req: Request, res: Response) => {
     }
 
     const result: SubmitQuizResult = await quizService.submitQuizResponse(dto, resolvedVoterId);
+    notifyAnalyticsChanged(poll.slug, "response_submitted");
     return res.status(201).json(result);
   } catch (error: unknown) {
     // Duplicate submission — MongoDB unique index violation (code 11000)
@@ -252,6 +254,7 @@ export const updateQuiz = async (req: Request, res: Response) => {
       parsedParams.data.slug,
       parsedBody.data
     );
+    notifyAnalyticsChanged(parsedParams.data.slug, "poll_updated");
     return res.status(200).json({ poll });
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -286,7 +289,9 @@ export const deleteQuiz = async (req: Request, res: Response) => {
   }
 
   try {
-    await quizService.deletePollBySlug(userId, parsedParams.data.slug);
+    const slug = parsedParams.data.slug;
+    await quizService.deletePollBySlug(userId, slug);
+    notifyAnalyticsChanged(slug, "poll_deleted");
     return res.status(200).json({ success: true });
   } catch (error: unknown) {
     if (error instanceof Error) {
