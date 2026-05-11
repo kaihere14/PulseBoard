@@ -100,10 +100,14 @@ function AnalyticsPage() {
     };
   }, [isLoaded, isSignedIn, slug, getToken, refreshTick]);
 
-  const shareUrl = useMemo(
-    () => (slug ? `${window.location.origin}/quiz?id=${slug}` : ""),
-    [slug]
-  );
+  const shareUrl = useMemo(() => {
+    if (!slug) return "";
+    const origin = window.location.origin;
+    if (analytics?.poll.isPublished) {
+      return `${origin}/analytics?id=${encodeURIComponent(slug)}`;
+    }
+    return `${origin}/quiz?id=${encodeURIComponent(slug)}`;
+  }, [slug, analytics?.poll.isPublished]);
 
   const handleCopy = () => {
     if (!shareUrl) return;
@@ -709,8 +713,9 @@ function ManagePollPanel({
     try {
       const token = await getToken();
       const payload: Parameters<typeof updateQuiz>[2] = {};
-      if (draftStatus !== status) payload.status = draftStatus;
       if (draftPublished !== isPublished) payload.isPublished = draftPublished;
+      if (draftPublished && !isPublished) payload.status = "expired";
+      else if (draftStatus !== status) payload.status = draftStatus;
       if (draftAnonymous !== isAnonymousPoll)
         payload.isAnonymousPoll = draftAnonymous;
       if (draftExpiresAt !== currentExpiresAtInput) {
@@ -834,7 +839,7 @@ function ManagePollPanel({
         {/* Toggles */}
         <ToggleRow
           label="Public analytics"
-          description="Anyone with the link can view results. Use Active status to accept responses."
+          description="Closes the poll and lets anyone with the link view results."
           value={draftPublished}
           onChange={setDraftPublished}
         />

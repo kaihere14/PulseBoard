@@ -185,6 +185,9 @@ export async function submitQuizResponse(
   if (poll.status === "draft") {
     throw makeError("Quiz is not yet open for responses", "NOT_ACCEPTING");
   }
+  if (poll.isPublished) {
+    throw makeError("Quiz is closed — results are public", "NOT_ACCEPTING");
+  }
   if (poll.status === "expired" || (poll.expiresAt && poll.expiresAt < new Date())) {
     throw makeError("Quiz has expired", "EXPIRED");
   }
@@ -352,6 +355,10 @@ export async function updatePollBySlug(
   if (data.isPublished !== undefined) poll.isPublished = data.isPublished;
   if (data.isAnonymousPoll !== undefined) poll.isAnonymousPoll = data.isAnonymousPoll;
   if (data.expiresAt !== undefined) poll.expiresAt = data.expiresAt;
+
+  if (poll.isPublished) {
+    poll.status = "expired";
+  }
 
   await poll.save();
   return poll;

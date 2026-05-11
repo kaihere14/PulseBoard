@@ -63,6 +63,15 @@ function QuizPage() {
         const data = await getQuizBySlug(slug, token);
         if (cancelled) return;
 
+        if (data.poll.isPublished) {
+          void navigate({
+            to: "/analytics",
+            search: { id: slug },
+            replace: true,
+          });
+          return;
+        }
+
         setQuiz(data);
         setFetchState("done");
         if (data.poll.isAnonymousPoll && hasAlreadyVoted(data.poll._id)) {
