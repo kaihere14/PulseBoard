@@ -1,58 +1,64 @@
 # PulseBoard
 
-PulseBoard is a full-stack quiz and polling platform built for fast creation, frictionless sharing, and clean real-time-style analytics. It lets a signed-in creator build a quiz, choose whether responses should be anonymous or authenticated, share a slug-based link, collect one response per participant, and review the results in a polished analytics dashboard.
+PulseBoard is a full-stack quiz and polling platform for creating a poll fast, sharing it with a clean slug, collecting one response per participant, and reviewing polished analytics that stay in sync as data changes.
 
-The project is organized as a small monorepo:
+It is built as a small monorepo:
 
-- `client/` contains the React + Vite frontend.
+- `client/` contains the React frontend.
 - `server/` contains the Bun + Express + MongoDB API.
-- the repo root contains shared linting, formatting, and pre-commit tooling.
+- the repo root contains shared linting, formatting, and Git hook tooling.
 
-## What PulseBoard Does
+## What Makes It Strong
+
+- Full creator-to-participant product flow, not just CRUD screens.
+- Clerk-authenticated creator experience.
+- Anonymous or authenticated participation per quiz.
+- Slug-based sharing and QR code handoff after creation.
+- Duplicate-vote protection backed by the database.
+- Creator-only analytics controls.
+- Live analytics refresh using `socket.io` rooms plus silent refetch.
+
+## Product Flow
 
 PulseBoard covers the full lifecycle of a poll or quiz:
 
 1. A creator signs in with Clerk.
 2. The creator builds a quiz with one or more multiple-choice questions.
-3. The quiz can be saved as `draft`, opened as `active`, or closed as `expired`.
-4. The creator can allow either:
-   - anonymous participation, or
-   - authenticated participation only.
-5. Participants open a shareable link using the quiz slug.
-6. Responses are stored in MongoDB with duplicate-vote protection.
-7. Analytics show total responses plus per-question option breakdowns.
-8. When a quiz is published, the poll is effectively closed and its analytics become shareable.
+3. The quiz is saved as `draft`, opened as `active`, or closed as `expired`.
+4. The creator decides whether responses are anonymous or sign-in-only.
+5. Participants join through a readable slug-based link.
+6. Responses are stored in MongoDB with duplicate-submission protection.
+7. The analytics page shows totals, per-question option breakdowns, and creator controls.
+8. When responses or poll settings change, connected analytics views refresh automatically.
+9. When a quiz is published, results become shareable and the quiz stops accepting answers.
 
-## Core Product Features
+## Core Features
 
 - Clerk authentication for creators and for non-anonymous quiz participation.
 - Quiz builder with dynamic questions and options.
-- Optional required questions.
+- Required-question support.
 - Anonymous response mode for low-friction voting.
 - Authenticated response mode for identity-backed participation.
-- Slug-based sharing instead of opaque IDs in the URL.
+- Slug generation from quiz titles.
+- QR code generation in the create-success modal.
 - Quiz states: `draft`, `active`, and `expired`.
 - Optional expiry date per quiz.
-- Duplicate-response protection:
-  - authenticated quizzes use the Clerk user identity;
-  - anonymous quizzes use a browser-stored local voter key.
-- Creator-only management controls for updating or deleting a quiz.
 - Public or private analytics depending on publish state.
-- QR code generation after quiz creation for fast mobile sharing.
-- Clean analytics UI with counts, percentages, and leading options.
+- Creator-only controls for updating or deleting a quiz.
+- Socket-powered analytics refresh when responses or poll settings change.
 
 ## User Experience Flow
 
 ### 1. Landing page
 
-Visitors land on `/`, see the product pitch, and can sign in through Clerk. If a user is already signed in, they are redirected to `/home`.
+Visitors land on `/`, see the product overview, and can sign in through Clerk. Already signed-in users are redirected to `/home`.
 
 ### 2. Home dashboard
 
-After sign-in, the frontend calls `GET /api/auth` to sync the Clerk user into MongoDB if needed. The dashboard then loads the creator's existing quizzes and offers two paths:
+After sign-in, the frontend calls `GET /api/auth` to sync the Clerk user into MongoDB if needed. The dashboard then loads the creator's quizzes and offers two paths:
 
 - create a new quiz;
-- join an existing quiz by entering its slug/code.
+- join an existing quiz by entering its slug.
 
 ### 3. Quiz creation
 
@@ -60,17 +66,17 @@ The `/create` page lets the creator:
 
 - set a title;
 - choose anonymous vs authenticated responses;
-- set the status;
+- choose the initial status;
 - optionally add an expiry date;
-- add any number of questions;
+- add one or more questions;
 - add at least two options per question;
 - mark questions as required.
 
-On success, the creator sees:
+After a successful create, the app shows a modal with:
 
-- the generated quiz link;
-- a QR code for sharing;
-- a shortcut into the analytics page for the new quiz.
+- the generated quiz URL;
+- a scannable QR code;
+- a shortcut into that quiz's analytics screen.
 
 ### 4. Quiz participation
 
@@ -79,8 +85,8 @@ The `/quiz?id=<slug>` page loads the quiz by slug.
 Access rules:
 
 - anonymous unpublished quizzes can be opened without sign-in;
-- non-anonymous unpublished quizzes require login;
-- once a quiz is published, the quiz page redirects to analytics instead of accepting more answers.
+- non-anonymous unpublished quizzes require login before viewing or answering;
+- published quizzes stop accepting answers and route viewers toward analytics instead.
 
 Submission rules:
 
@@ -95,23 +101,41 @@ Submission rules:
 
 The `/analytics?id=<slug>` page displays:
 
-- total response count;
-- total question count;
+- total responses;
+- total questions;
 - average answers per question;
-- a per-question percentage breakdown for every option.
+- a per-question count and percentage breakdown for every option.
 
 Visibility rules:
 
 - if the quiz is unpublished, only the creator can view analytics;
-- if the quiz is published, analytics can be shared publicly.
+- if the quiz is published, analytics become shareable.
 
-Creators additionally get a management panel to:
+Creator controls on the analytics screen include:
 
-- change status;
-- toggle anonymous mode;
-- set or clear expiry;
-- publish results;
-- delete the quiz and all associated data.
+- changing quiz status;
+- toggling anonymous responses;
+- setting or clearing expiry;
+- publishing results;
+- deleting the quiz and all related data.
+
+## Live Analytics With Sockets
+
+The analytics page is no longer refresh-only. It now uses `socket.io` to keep open analytics views up to date.
+
+Current flow:
+
+1. The client fetches the latest analytics snapshot with `GET /api/quiz/:slug/analytics`.
+2. The analytics page opens a socket connection to the API origin.
+3. The client joins a room with `join-analytics-room`.
+4. The server maps that to an internal room named `analytics:<slug>`.
+5. The server emits `analytics:changed` when:
+   - a response is submitted;
+   - a poll is updated;
+   - a poll is deleted.
+6. The client debounces those events and silently refetches analytics so the UI stays current without a disruptive full reload.
+
+This means the app uses live invalidation plus refetch, which is simpler and safer than pushing partial analytics state from the server.
 
 ## Tech Stack
 
@@ -124,6 +148,7 @@ Creators additionally get a management panel to:
 - Clerk React SDK
 - Tailwind CSS v4
 - `qrcode.react`
+- `socket.io-client`
 
 ### Backend
 
@@ -133,8 +158,9 @@ Creators additionally get a management panel to:
 - MongoDB
 - Mongoose
 - Clerk Express SDK
-- Zod for request validation
+- Zod for validation
 - CORS
+- `socket.io`
 
 ### Tooling
 
@@ -145,21 +171,24 @@ Creators additionally get a management panel to:
 
 ## Architecture Overview
 
-PulseBoard follows a simple client-server architecture:
+PulseBoard uses a simple client-server architecture:
 
 - the React frontend handles routing, auth-aware UI, quiz creation, quiz participation, and analytics rendering;
-- the Express API handles authentication checks, validation, business rules, and persistence;
+- the Express API handles validation, auth checks, business rules, and persistence;
 - MongoDB stores users, polls, questions, responses, and answers;
-- Clerk provides identity and session management.
+- Clerk provides identity and session management;
+- Socket.IO keeps analytics pages synchronized when quiz data changes.
 
 At a high level:
 
-- Clerk authenticates the user;
-- the frontend requests a token from Clerk;
-- the token is sent to the API in the `Authorization` header when needed;
-- the API uses Clerk middleware to resolve the current user;
-- the backend persists or looks up that user in MongoDB;
-- quiz and response data are then created, queried, updated, or deleted through Mongoose models.
+1. Clerk authenticates the user.
+2. The frontend requests a token from Clerk when it needs an authenticated API call.
+3. The token is sent in the `Authorization` header.
+4. The API uses Clerk middleware to resolve the current user.
+5. The backend persists or looks up that user in MongoDB.
+6. Quiz and response data are created, queried, updated, or deleted through Mongoose models.
+7. The analytics route joins a socket room for the current slug.
+8. Mutations emit an `analytics:changed` event so connected clients silently refetch fresh analytics.
 
 ## Data Model
 
@@ -167,7 +196,7 @@ The backend stores data across five core collections/models.
 
 ### `Auth`
 
-Stores the application's local representation of a Clerk user:
+The app's local representation of a Clerk user:
 
 - `userId`
 - `email`
@@ -176,7 +205,7 @@ Stores the application's local representation of a Clerk user:
 
 ### `Poll`
 
-Represents the parent quiz/poll:
+The parent quiz record:
 
 - `title`
 - `creatorId`
@@ -186,9 +215,15 @@ Represents the parent quiz/poll:
 - `status`
 - `expiresAt`
 
+Notes:
+
+- `slug` is unique and indexed.
+- `status` is one of `draft`, `active`, or `expired`.
+- if a poll is published, the backend also forces its status to `expired`.
+
 ### `Question`
 
-Represents each multiple-choice question:
+Each multiple-choice question:
 
 - `pollId`
 - `question`
@@ -198,7 +233,7 @@ Represents each multiple-choice question:
 
 ### `Response`
 
-Represents one participant submission to a poll:
+One participant submission to a poll:
 
 - `pollId`
 - `voterId`
@@ -207,20 +242,25 @@ A unique index on `(pollId, voterId)` prevents duplicate submissions.
 
 ### `Answer`
 
-Represents the selected option for a single question inside a response:
+One selected option inside a response:
 
 - `responseId`
 - `questionId`
 - `selectedOptionIndex`
 
-## Backend API Summary
+## API Summary
 
-Base URL locally: `http://localhost:3000`
+Local API base URL: `http://localhost:3000`
+
+### Health
+
+- `GET /`
+  - simple JSON response for a quick server check
 
 ### Authentication
 
 - `GET /api/auth`
-  - requires a Clerk-authenticated request
+  - requires Clerk authentication
   - returns the existing MongoDB user or creates one from Clerk data
 
 ### Quiz routes
@@ -235,8 +275,9 @@ Base URL locally: `http://localhost:3000`
 
 - `POST /api/quiz/submit`
   - submit answers for a quiz
-  - anonymous quizzes accept anonymous voter IDs
+  - anonymous quizzes accept an anonymous voter ID
   - non-anonymous quizzes require authentication
+  - returns `409` on duplicate or closed submissions
 
 - `GET /api/quiz/:slug`
   - fetch quiz details for answering
@@ -245,7 +286,7 @@ Base URL locally: `http://localhost:3000`
 - `GET /api/quiz/:slug/analytics`
   - fetch aggregated analytics
   - unpublished analytics are creator-only
-  - published analytics are shareable
+  - published analytics are publicly shareable
 
 - `PATCH /api/quiz/:slug`
   - update quiz metadata
@@ -255,19 +296,34 @@ Base URL locally: `http://localhost:3000`
   - delete the quiz and all related questions, responses, and answers
   - creator-only
 
+### Socket events
+
+Client -> server:
+
+- `join-analytics-room` with the quiz slug
+- `leave-analytics-room` with the quiz slug
+
+Server -> client:
+
+- `analytics:changed`
+  - payload:
+    - `slug`
+    - `reason`: `response_submitted` | `poll_updated` | `poll_deleted`
+    - `updatedAt`
+
 ## Request Validation and Business Rules
 
 The backend uses Zod to validate quiz payloads and submissions before any database writes happen.
 
-Important business rules enforced by the API:
+Important rules enforced by the API:
 
 - quiz titles are required;
-- every question needs at least two options;
 - at least one question is required to create a quiz;
+- every question needs at least two options;
 - required questions must be answered before submission;
 - invalid question IDs or invalid option indexes are rejected;
-- draft quizzes do not accept responses;
-- expired quizzes do not accept responses;
+- `draft` quizzes do not accept responses;
+- `expired` quizzes do not accept responses;
 - published quizzes no longer accept responses;
 - only creators can update or delete their own quizzes.
 
@@ -275,21 +331,25 @@ Important business rules enforced by the API:
 
 ```text
 pulseBoard/
-├── client/                     # React frontend
+├── client/
 │   ├── src/
-│   │   ├── lib/api.ts          # frontend API client
-│   │   ├── routes/             # file-based app routes
-│   │   └── main.tsx            # app entry + Clerk provider
+│   │   ├── lib/
+│   │   │   ├── api.ts                 # frontend API client
+│   │   │   └── analyticsSocket.ts     # socket.io client connection helper
+│   │   ├── routes/                    # landing, home, create, quiz, analytics
+│   │   └── main.tsx                   # app entry + Clerk provider
 │   ├── .env.example
 │   ├── package.json
-│   └── vercel.json             # SPA rewrite config for Vercel
-├── server/                     # Bun + Express API
+│   └── vercel.json
+├── server/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── authentication/
-│   │   │   └── quiz/
+│   │   │   ├── quiz/
+│   │   │   └── realtime/
+│   │   │       └── analyticsRealtime.ts
 │   │   ├── db/
-│   │   └── index.ts
+│   │   └── index.ts                   # HTTP + socket server bootstrap
 │   └── package.json
 ├── .husky/
 ├── eslint.config.js
@@ -301,7 +361,7 @@ pulseBoard/
 
 ### Frontend
 
-Create `client/.env` using `client/.env.example` as a base:
+Create `client/.env` using `client/.env.example`:
 
 ```bash
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
@@ -322,11 +382,12 @@ CLERK_SECRET_KEY=your_clerk_secret_key
 Notes:
 
 - `MONGODB_URI` is required for the database connection.
-- `CLIENT_URL` is used by the backend CORS configuration.
+- `CLIENT_URL` is used by both Express CORS and Socket.IO CORS.
 - `PORT` defaults to `3000` if omitted.
 - `CLERK_SECRET_KEY` is required by Clerk's backend middleware and SDK.
+- the socket client connects through `VITE_API_URL`, so there is no separate socket URL to configure.
 
-## Local Development Setup
+## Local Development
 
 ### Prerequisites
 
@@ -336,54 +397,51 @@ Make sure you have:
 - a MongoDB instance or MongoDB Atlas connection string
 - a Clerk application with frontend and backend keys configured
 
-### 1. Install root tooling dependencies
+### 1. Install dependencies
+
+From the repo root:
 
 ```bash
 bun install
 ```
 
-### 2. Install server dependencies
+Then install package-specific dependencies:
 
 ```bash
-( cd server && bun install )
+cd server && bun install
+cd ../client && bun install
 ```
 
-### 3. Install client dependencies
-
-```bash
-( cd client && bun install )
-```
-
-### 4. Add environment files
+### 2. Add environment files
 
 - create `client/.env`
 - create `server/.env`
 
-### 5. Run the backend
+### 3. Run the backend
 
-From the repository root, in one terminal:
+In one terminal:
 
 ```bash
 cd server && bun run dev
 ```
 
-The API starts on `http://localhost:3000` by default.
+The API and Socket.IO server both run on `http://localhost:3000`.
 
-### 6. Run the frontend
+### 4. Run the frontend
 
-From the repository root, in another terminal:
+In another terminal:
 
 ```bash
 cd client && bun run dev
 ```
 
-The Vite app starts on `http://localhost:5173`.
+The Vite app runs on `http://localhost:5173`.
 
 ## Available Scripts
 
 ### Root scripts
 
-From the repository root:
+From the repo root:
 
 ```bash
 bun run lint
@@ -392,7 +450,7 @@ bun run format
 bun run format:check
 ```
 
-There is also a Husky pre-commit hook that runs:
+The Husky pre-commit hook runs:
 
 - `lint-staged`
 - full repo linting
@@ -421,11 +479,11 @@ bun run preview
 
 ## Deployment Notes
 
-### Frontend deployment
+### Frontend
 
-The frontend includes `client/vercel.json` with an SPA rewrite so that client-side routes continue to work correctly on Vercel.
+The frontend includes `client/vercel.json` with an SPA rewrite so client-side routes continue to work correctly on refresh.
 
-That means routes like:
+Routes such as:
 
 - `/`
 - `/home`
@@ -435,82 +493,62 @@ That means routes like:
 
 can be refreshed without breaking the app shell.
 
-### Backend deployment
+### Backend
 
-The backend should be deployed on a host that supports Bun, as long as you provide:
+Deploy the backend on a host that supports Bun and long-lived HTTP connections for Socket.IO, with:
 
 - MongoDB connectivity
 - Clerk backend credentials
 - the correct `CLIENT_URL`
 
-For production, make sure the frontend `VITE_API_URL` points to your deployed API base URL.
+For production, make sure `VITE_API_URL` points to the deployed API origin used by both REST calls and sockets.
 
 ## Security and Access Model
 
-PulseBoard already includes a few solid guardrails:
+PulseBoard includes a few strong guardrails:
 
 - creator actions are protected by Clerk auth;
-- non-anonymous quizzes require login to answer;
+- non-anonymous unpublished quizzes require login to access, and non-anonymous quizzes require login to submit;
 - unpublished analytics are hidden from non-creators;
 - duplicate voting is blocked at the database level;
 - payloads are validated with Zod before writes occur.
 
 ## Current Limitations
 
-This codebase is already functional, but a few areas are still lightweight and worth improving in the future:
+This codebase is already functional, but a few areas are still intentionally lightweight:
 
 - there is no automated test suite yet;
 - there is no committed backend `.env.example`;
-- analytics are fetched on refresh rather than via live push/websockets;
+- analytics live updates use event-driven refetch instead of server-pushed partial analytics state;
 - quiz editing currently focuses on poll metadata, not full question editing after creation;
-- the root workspace uses shared tooling, but the frontend and backend still manage dependencies separately.
-
-## Why This Project Stands Out
-
-PulseBoard is a strong hackathon-style full-stack project because it shows:
-
-- a complete creator-to-participant product flow;
-- real authentication and authorization;
-- database design with normalized quiz/response entities;
-- input validation and business-rule enforcement;
-- creator-only management actions;
-- shareable result pages with thoughtful UX;
-- a clear separation between frontend, backend, and persistence layers.
+- the frontend and backend still manage dependencies separately inside the monorepo.
 
 ## Quick Start
 
-If you just want the shortest path to running the app:
+If you want the shortest path to running the app:
 
 ```bash
-# from repo root
 bun install
+cd server && bun install
+cd ../client && bun install
 ```
 
-In terminal 1:
+Then run:
+
+Terminal 1:
 
 ```bash
-( cd server && bun install )
 cd server && bun run dev
 ```
 
-In terminal 2:
+Terminal 2:
 
 ```bash
-( cd client && bun install )
 cd client && bun run dev
 ```
 
-Then open `http://localhost:5173`.
+Open [http://localhost:5173](http://localhost:5173).
 
-## Final Summary
+## Summary
 
-PulseBoard is a modern full-stack polling platform that combines:
-
-- polished frontend UX,
-- Clerk-based authentication,
-- MongoDB-backed persistence,
-- strong validation,
-- creator controls,
-- and shareable analytics.
-
-It is a clean showcase project for product thinking, full-stack implementation, and practical system design in a compact codebase.
+PulseBoard is a compact but complete full-stack project that combines product thinking, auth, database modeling, validation, live analytics updates, and polished sharing flows in one repo.
