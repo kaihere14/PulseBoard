@@ -63,16 +63,6 @@ function QuizPage() {
         const data = await getQuizBySlug(slug, token);
         if (cancelled) return;
 
-        // Published polls: share links point at results (analytics), not the voting UI.
-        if (data.poll.isPublished) {
-          void navigate({
-            to: "/analytics",
-            search: { id: slug },
-            replace: true,
-          });
-          return;
-        }
-
         setQuiz(data);
         setFetchState("done");
         if (data.poll.isAnonymousPoll && hasAlreadyVoted(data.poll._id)) {
@@ -164,7 +154,10 @@ function QuizPage() {
   };
 
   const handleSignIn = () => {
-    openSignIn({ afterSignInUrl: window.location.href, afterSignUpUrl: window.location.href });
+    openSignIn({
+      forceRedirectUrl: window.location.href,
+      fallbackRedirectUrl: window.location.href,
+    });
   };
 
   if (!isLoaded || fetchState === "idle") return <FullScreenLoader />;
@@ -486,11 +479,11 @@ function QuizView({
           )}
           {poll.isPublished ? (
             <span className="rounded-full border-2 border-zinc-900 bg-lime-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-              Published
+              Results public
             </span>
           ) : (
             <span className="rounded-full border-2 border-zinc-900 bg-stone-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-              Unpublished
+              Results private
             </span>
           )}
         </div>

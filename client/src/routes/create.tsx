@@ -59,20 +59,28 @@ function SuccessModal({ slug, onClose }: { slug: string; onClose: () => void }) 
         {/* Header */}
         <div className="rounded-t-2xl border-b-2 border-zinc-900 bg-lime-200 px-6 py-4">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-600">Success</p>
-          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-zinc-900">Quiz is live!</h2>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-zinc-900">Quiz saved!</h2>
         </div>
 
         {/* QR Code */}
         <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4">
           <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[4px_4px_0_0_#18181b]">
-            <QRCodeSVG value={quizUrl} size={180} bgColor="#ffffff" fgColor="#18181b" level="M" />
+            <QRCodeSVG
+              value={quizUrl}
+              size={180}
+              bgColor="#ffffff"
+              fgColor="#18181b"
+              level="M"
+            />
           </div>
           <p className="text-xs text-zinc-500">Scan to open the quiz</p>
         </div>
 
         {/* Link + Copy */}
         <div className="px-6 pb-2">
-          <p className="mb-1.5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">Share link</p>
+          <p className="mb-1.5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+            Join link
+          </p>
           <div className="flex items-center gap-2 rounded-lg border-2 border-zinc-900 bg-stone-50 px-3 py-2">
             <a
               href={quizUrl}
@@ -115,7 +123,6 @@ function CreateQuiz() {
   const [title, setTitle] = useState("");
   const [isAnonymousPoll, setIsAnonymousPoll] = useState(false);
   const [status, setStatus] = useState<QuizStatus>("draft");
-  const [isPublished, setIsPublished] = useState(false);
   const [expiresAt, setExpiresAt] = useState("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
 
@@ -211,7 +218,6 @@ function CreateQuiz() {
         poll: {
           title: title.trim(),
           isAnonymousPoll,
-          isPublished,
           status,
           expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
           questions: payloadQuestions,
@@ -297,19 +303,6 @@ function CreateQuiz() {
               <span className="text-sm">
                 <span className="font-semibold">Anonymous responses</span>
                 <span className="block text-zinc-600">Hide who answered what.</span>
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 rounded-lg border-2 border-zinc-900 bg-stone-50 px-4 py-3">
-              <input
-                type="checkbox"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.currentTarget.checked)}
-                className="size-5 accent-emerald-600"
-              />
-              <span className="text-sm">
-                <span className="font-semibold">Publish right away</span>
-                <span className="block text-zinc-600">Make it joinable on save.</span>
               </span>
             </label>
 

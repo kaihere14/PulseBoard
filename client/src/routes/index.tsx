@@ -30,14 +30,16 @@ function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 text-zinc-900">
+    <div className="min-h-screen overflow-x-hidden bg-stone-100 text-zinc-900">
       <header className="border-b-2 border-zinc-900 bg-amber-200">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg">
-              <img src="/src/logo.svg" alt="hello" />
+              <img src="https://res.cloudinary.com/dw87upoot/image/upload/v1778488812/logo_rku0hm.svg" alt="hello" />
             </span>
-            <p className="text-sm font-black uppercase tracking-[0.25em]">PulseBoard</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] sm:text-sm sm:tracking-[0.25em]">
+              PulseBoard
+            </p>
           </div>
           <span className="hidden rounded-full border-2 border-zinc-900 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest md:inline-block">
             Polls · Quizzes · Live
@@ -45,13 +47,13 @@ function Landing() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12 md:flex-row md:gap-12 md:py-35 md:scale-120">
-        <section className="flex flex-1 flex-col justify-center">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-12 md:flex-row md:items-center md:gap-10 lg:gap-14 lg:py-16">
+        <section className="flex flex-1 flex-col justify-center text-center md:text-left">
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-zinc-500 sm:text-xs sm:tracking-[0.3em]">
             Full-stack polling, made playful
           </p>
 
-          <h1 className="mt-4 text-5xl font-black leading-[1.05] tracking-tight md:text-6xl">
+          <h1 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
             Ask a question.{" "}
             <span className="relative inline-block">
               <span className="absolute inset-x-1 bottom-2 z-0 h-4 bg-lime-300" aria-hidden />
@@ -59,12 +61,12 @@ function Landing() {
             </span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-700">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-zinc-700 sm:mt-6 sm:text-lg md:max-w-2xl">
             Build a quiz in minutes, share a single link, and watch responses roll in — without the
             corporate vibes.
           </p>
 
-          <ul className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
+          <ul className="mt-8 grid max-w-xl gap-3 sm:mt-10 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <li
                 key={f.title}
@@ -82,7 +84,7 @@ function Landing() {
             ))}
           </ul>
 
-          <div className="mt-10 hidden items-center gap-3 md:flex">
+          <div className="mt-8 hidden flex-wrap items-center gap-3 md:flex">
             <span className="rounded-full border-2 border-zinc-900 bg-rose-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
               Free to try
             </span>
@@ -95,31 +97,32 @@ function Landing() {
           </div>
         </section>
 
-        <aside className="flex flex-1 items-start justify-center md:items-center">
-          <div className="relative w-full max-w-md">
+        <aside className="flex w-full flex-1 items-start justify-center md:items-center">
+          <div className="relative w-full max-w-sm sm:max-w-md">
             <span
-              className="absolute -left-3 -top-3 inline-flex -rotate-6 items-center gap-1 rounded-md border-2 border-zinc-900 bg-amber-300 px-2 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#18181b]"
+              className="absolute left-4 top-0 z-10 inline-flex -translate-y-1/2 -rotate-3 items-center gap-1 rounded-md border-2 border-zinc-900 bg-amber-300 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] shadow-[3px_3px_0_0_#18181b] sm:text-[11px] sm:tracking-widest"
               aria-hidden
             >
               Sign in ↘
             </span>
-            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[8px_8px_0_0_#18181b] md:p-6">
+            <div className="overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[6px_6px_0_0_#18181b] sm:p-5 sm:shadow-[8px_8px_0_0_#18181b] md:p-6">
               <SignIn
                 forceRedirectUrl="/home"
                 signUpFallbackRedirectUrl="/home"
                 appearance={{
                   elements: {
-                    rootBox: "w-full",
-                    card: "bg-transparent shadow-none border-0 p-0",
+                    rootBox: "w-full min-w-0",
+                    card: "w-full min-w-0 border-0 bg-transparent p-0 shadow-none",
                     headerTitle: "text-zinc-900 font-bold tracking-tight",
                     headerSubtitle: "text-zinc-600",
                     socialButtonsBlockButton:
-                      "border-2 border-zinc-900 rounded-lg bg-white font-semibold shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:bg-stone-50 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none",
+                      "w-full rounded-lg border-2 border-zinc-900 bg-white text-sm font-semibold shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:bg-stone-50 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none",
                     formButtonPrimary:
-                      "bg-emerald-500 hover:bg-emerald-500 border-2 border-zinc-900 rounded-lg font-bold uppercase tracking-wide shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none",
+                      "rounded-lg border-2 border-zinc-900 bg-emerald-500 font-bold uppercase tracking-wide shadow-[3px_3px_0_0_#18181b] transition-all hover:translate-y-0.5 hover:bg-emerald-500 hover:shadow-[1px_1px_0_0_#18181b] active:translate-y-1 active:shadow-none",
                     formFieldInput:
-                      "border-2 border-zinc-900 rounded-lg focus:ring-2 focus:ring-amber-300",
-                    footerActionLink: "text-emerald-700 font-bold",
+                      "min-w-0 rounded-lg border-2 border-zinc-900 focus:ring-2 focus:ring-amber-300",
+                    footerAction: "flex-wrap justify-center gap-1 text-center",
+                    footerActionLink: "font-bold text-emerald-700",
                   },
                 }}
               />

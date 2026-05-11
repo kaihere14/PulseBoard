@@ -117,8 +117,8 @@ function AnalyticsPage() {
 
   const handleSignIn = () =>
     openSignIn({
-      afterSignInUrl: window.location.href,
-      afterSignUpUrl: window.location.href,
+      forceRedirectUrl: window.location.href,
+      fallbackRedirectUrl: window.location.href,
     });
 
   return (
@@ -258,7 +258,7 @@ function ForbiddenView({
           </h2>
           <p className="mt-2 text-sm text-zinc-600">
             {message ??
-              "This quiz isn't published yet, so only its creator can view the analytics."}
+              "These analytics aren't shared yet, so only the creator can view this page."}
           </p>
           <button
             type="button"
@@ -336,7 +336,7 @@ function AnalyticsView({
 }) {
   const { poll, totalResponses, questions, isCreator } = analytics;
 
-  const visibility = poll.isPublished ? "Published" : "Unpublished";
+  const visibility = poll.isPublished ? "Results public" : "Results private";
   const avgAnswersPerQuestion = useMemo(() => {
     if (questions.length === 0) return 0;
     const total = questions.reduce((sum, q) => sum + q.totalAnswers, 0);
@@ -833,8 +833,8 @@ function ManagePollPanel({
 
         {/* Toggles */}
         <ToggleRow
-          label="Published"
-          description="Anyone with the link can view results."
+          label="Public analytics"
+          description="Anyone with the link can view results. Use Active status to accept responses."
           value={draftPublished}
           onChange={setDraftPublished}
         />

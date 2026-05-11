@@ -118,7 +118,7 @@ function Home() {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg ">
-              <img src="/src/logo.svg" alt="hello"/>
+              <img src="https://res.cloudinary.com/dw87upoot/image/upload/v1778488812/logo_rku0hm.svg" alt="hello"/>
             </span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-700">
@@ -334,11 +334,11 @@ function Home() {
                         )}
                         {quiz.isPublished ? (
                           <span className="rounded-full border-2 border-zinc-900 bg-lime-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-                            Published
+                            Results public
                           </span>
                         ) : (
                           <span className="rounded-full border-2 border-zinc-900 bg-stone-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
-                            Unpublished
+                            Results private
                           </span>
                         )}
                       </div>
