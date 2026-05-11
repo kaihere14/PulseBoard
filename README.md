@@ -1,3 +1,4 @@
+
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -132,14 +133,14 @@ The application will be available at `http://localhost:5173`.
 
 ## 📖 Usage
 
-### Creating a Quiz
+### Creating a Quiz 📝
 
 1. Sign in using the landing page.
 2. Navigate to the **Home** dashboard.
 3. Click **"Create quiz"** to start the creation flow.
-4. Once created, you will receive a unique code to share with participants.
+4. Save your quiz to generate a unique join code for participants (the system now confirms saving rather than publishing).
 
-### Joining a Quiz
+### Joining a Quiz 🤝
 
 1. On the **Home** dashboard, locate the **"Join a quiz"** section.
 2. Enter the unique quiz code provided by the creator.
@@ -147,12 +148,10 @@ The application will be available at `http://localhost:5173`.
 
 ### Analyzing Results 📈
 
-1. Access your dashboard to see a list of your quizzes.
+1. Access your dashboard to see a list of your quizzes, now featuring more descriptive visibility labels.
 2. Click on any quiz to view its **Analytics** page.
-3. Review detailed response statistics and manage the quiz status (e.g., publishing or closing the quiz).
-
----
-
+3. Review detailed response statistics. Note that access to analytics for unpublished quizzes is restricted to authorized users.
+4. Manage the quiz lifecycle by toggling between draft, active, and expired states.
 ## 🔌 API Documentation
 
 ### Authentication
