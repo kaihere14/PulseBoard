@@ -1,3 +1,4 @@
+
 # PulseBoard
 
 [![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=flat-square&logo=bun)](https://bun.sh)
@@ -223,7 +224,9 @@ bun run build
 
 The static files will be generated in `client/dist`.
 
----
+#### Vercel Support 🌐
+
+The frontend includes a `vercel.json` configuration to handle client-side rewrites. This directs all requests to `index.html`, supporting single-page application (SPA) routing for seamless Vercel deployments.
 ## 🤝 Contributing
 
 1. Fork the Project
